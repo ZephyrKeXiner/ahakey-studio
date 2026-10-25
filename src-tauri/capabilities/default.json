@@ -1,0 +1,31 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Studio main window: Runtime state and explicit device operations.",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "allow-runtime-snapshot",
+    "allow-runtime-watch",
+    "allow-runtime-unwatch",
+    "allow-runtime-reconnect",
+    "allow-runtime-configuration",
+    "allow-runtime-read-configuration",
+    "allow-runtime-keymap",
+    "allow-runtime-operation",
+    "allow-runtime-device-connection",
+    "allow-runtime-prepare-resource",
+    "allow-runtime-oled",
+    "allow-runtime-upload-oled",
+    "allow-runtime-control-operation",
+    "allow-runtime-service-status",
+    "allow-runtime-service-start",
+    "allow-runtime-service-stop",
+    "allow-system-open-settings",
+    "allow-runtime-input-settings",
+    "allow-runtime-set-input-monitor",
+    "allow-runtime-patch-configuration"
+  ]
+}

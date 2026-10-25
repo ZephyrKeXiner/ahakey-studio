@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-oled"
+description = "Enables the runtime_oled command without any pre-configured scope."
+commands.allow = ["runtime_oled"]
+
+[[permission]]
+identifier = "deny-runtime-oled"
+description = "Denies the runtime_oled command without any pre-configured scope."
+commands.deny = ["runtime_oled"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-keymap"
+description = "Enables the runtime_keymap command without any pre-configured scope."
+commands.allow = ["runtime_keymap"]
+
+[[permission]]
+identifier = "deny-runtime-keymap"
+description = "Denies the runtime_keymap command without any pre-configured scope."
+commands.deny = ["runtime_keymap"]

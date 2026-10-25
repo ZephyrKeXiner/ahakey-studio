@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-device-connection"
+description = "Enables the runtime_device_connection command without any pre-configured scope."
+commands.allow = ["runtime_device_connection"]
+
+[[permission]]
+identifier = "deny-runtime-device-connection"
+description = "Denies the runtime_device_connection command without any pre-configured scope."
+commands.deny = ["runtime_device_connection"]

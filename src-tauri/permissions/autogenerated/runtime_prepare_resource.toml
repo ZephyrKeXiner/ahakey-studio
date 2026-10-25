@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-prepare-resource"
+description = "Enables the runtime_prepare_resource command without any pre-configured scope."
+commands.allow = ["runtime_prepare_resource"]
+
+[[permission]]
+identifier = "deny-runtime-prepare-resource"
+description = "Denies the runtime_prepare_resource command without any pre-configured scope."
+commands.deny = ["runtime_prepare_resource"]

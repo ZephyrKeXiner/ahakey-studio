@@ -1,0 +1,27 @@
+fn main() {
+    tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
+        tauri_build::AppManifest::new().commands(&[
+            "runtime_snapshot",
+            "runtime_watch",
+            "runtime_unwatch",
+            "runtime_reconnect",
+            "runtime_configuration",
+            "runtime_read_configuration",
+            "runtime_keymap",
+            "runtime_patch_configuration",
+            "runtime_operation",
+            "runtime_device_connection",
+            "runtime_prepare_resource",
+            "runtime_oled",
+            "runtime_upload_oled",
+            "runtime_control_operation",
+            "runtime_service_status",
+            "runtime_service_start",
+            "runtime_service_stop",
+            "system_open_settings",
+            "runtime_input_settings",
+            "runtime_set_input_monitor",
+        ]),
+    ))
+    .expect("failed to configure Studio permissions");
+}

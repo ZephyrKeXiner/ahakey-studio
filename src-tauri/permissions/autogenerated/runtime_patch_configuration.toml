@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-patch-configuration"
+description = "Enables the runtime_patch_configuration command without any pre-configured scope."
+commands.allow = ["runtime_patch_configuration"]
+
+[[permission]]
+identifier = "deny-runtime-patch-configuration"
+description = "Denies the runtime_patch_configuration command without any pre-configured scope."
+commands.deny = ["runtime_patch_configuration"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-input-settings"
+description = "Enables the runtime_input_settings command without any pre-configured scope."
+commands.allow = ["runtime_input_settings"]
+
+[[permission]]
+identifier = "deny-runtime-input-settings"
+description = "Denies the runtime_input_settings command without any pre-configured scope."
+commands.deny = ["runtime_input_settings"]

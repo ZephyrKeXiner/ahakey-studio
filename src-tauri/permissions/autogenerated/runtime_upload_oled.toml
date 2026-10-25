@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-upload-oled"
+description = "Enables the runtime_upload_oled command without any pre-configured scope."
+commands.allow = ["runtime_upload_oled"]
+
+[[permission]]
+identifier = "deny-runtime-upload-oled"
+description = "Denies the runtime_upload_oled command without any pre-configured scope."
+commands.deny = ["runtime_upload_oled"]

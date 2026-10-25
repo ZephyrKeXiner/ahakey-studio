@@ -1,0 +1,37 @@
+{
+  "name": "ahakey-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "check": "tsc --noEmit",
+    "test": "vitest run src",
+    "test:ui": "playwright test",
+    "test:runtime": "python3 scripts/smoke-runtime.py",
+    "prepare:native": "python3 scripts/prepare-native.py",
+    "test:service": "python3 scripts/smoke-service.py",
+    "test:bundle": "python3 scripts/smoke-bundle.py"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@tauri-apps/cli": "^2",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^6.0.2",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "vite": "^8.0.16",
+    "vitest": "^5.0.5"
+  },
+  "description": "Desktop companion for AhaKey Runtime"
+}

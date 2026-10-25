@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-service-start"
+description = "Enables the runtime_service_start command without any pre-configured scope."
+commands.allow = ["runtime_service_start"]
+
+[[permission]]
+identifier = "deny-runtime-service-start"
+description = "Denies the runtime_service_start command without any pre-configured scope."
+commands.deny = ["runtime_service_start"]

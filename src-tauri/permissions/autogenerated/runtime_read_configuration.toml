@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-read-configuration"
+description = "Enables the runtime_read_configuration command without any pre-configured scope."
+commands.allow = ["runtime_read_configuration"]
+
+[[permission]]
+identifier = "deny-runtime-read-configuration"
+description = "Denies the runtime_read_configuration command without any pre-configured scope."
+commands.deny = ["runtime_read_configuration"]

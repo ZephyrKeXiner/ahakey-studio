@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-service-status"
+description = "Enables the runtime_service_status command without any pre-configured scope."
+commands.allow = ["runtime_service_status"]
+
+[[permission]]
+identifier = "deny-runtime-service-status"
+description = "Denies the runtime_service_status command without any pre-configured scope."
+commands.deny = ["runtime_service_status"]

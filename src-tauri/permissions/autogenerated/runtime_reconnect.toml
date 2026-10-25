@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-reconnect"
+description = "Enables the runtime_reconnect command without any pre-configured scope."
+commands.allow = ["runtime_reconnect"]
+
+[[permission]]
+identifier = "deny-runtime-reconnect"
+description = "Denies the runtime_reconnect command without any pre-configured scope."
+commands.deny = ["runtime_reconnect"]
