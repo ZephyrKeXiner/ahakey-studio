@@ -29,7 +29,7 @@ macOS 已接入会话级后台管理：打开 Studio 时附着已有 Runtime，�
 
 后台使用当前 GUI 会话的 launchd job 与独立 supervisor。Runtime 异常退出后以 1、2、4 秒退避，最多自动重启三次；预算用尽后需手动恢复。预算属于本次开机，重启后不会沿用旧故障预算。plist 放在应用数据目录的 `runtime-session` 中，不安装到 `~/Library/LaunchAgents`，电脑重启后不会因登录扫描而自启。
 
-Studio 直接通过 discovery 和认证 WebSocket 对接 Rust Runtime。已运行的外部 Runtime 只附着，不按保存的 PID 关闭；未运行时启动随包 Runtime。启动检查以 Runtime 自身的所有权锁为准。系统语音与 Hook 仍在后续范围。
+Studio 直接通过 discovery 和认证 WebSocket 对接 Rust Runtime。已运行的外部 Runtime 只附着，不按保存的 PID 关闭；未运行时启动随包 Runtime。启动检查以 Runtime 自身的所有权锁为准。已接入 macOS Apple Speech 语音与 Claude Code／Cursor／Codex Hook。
 
 “系统与权限”中可保存后台输入观察开关，默认关闭。设置在下一次后台启动时生效，保存开关不会重启 Runtime 或中断现有任务；可在同页关闭并重新启动后台来应用。Runtime 通过 `--input-monitor` 启动随包 helper，并管理其生命周期；模拟模式不会启动真实监听。独立启动的 Runtime 仍从原启动来源配置，Studio 不接管它。权限页直接使用 Runtime 的状态，兼容旧版缺少 `snapshot.input` 的情况；不读取 Studio 自身的授权来推断后台是否获准，也不保存按键内容。蓝牙授权尚无 Runtime 查询接口，界面提供系统设置入口，不推断授权结果。
 
@@ -93,7 +93,7 @@ npm run tauri build -- --debug --bundles app
 
 1. 更完整的素材编辑与动图制作。
 2. 继续补齐灯效字段补丁和真机故障恢复验收；键位、亮度与描述补丁、显式完整读回及按字段暂停/核验/续写已接入。
-3. macOS 后台语音、权限引导、原生反馈窗口和 Hook。
+3. 完成 macOS 语音与 AI Hook 的真人／真机验收，补齐 Hook 安装和卸载流程。
 4. 保留配置的固件升级、性能稳定性验收及签名分发。
 
 2026-10-23 范围更新：按用户决定，旧 macOS Agent 的兼容、迁移、接管与回退不在本项目范围内。Studio 只对接 Rust Runtime。
@@ -121,3 +121,14 @@ Apache-2.0，见 [LICENSE](LICENSE)。
 点击按键、灯条或 LCD 可进入已有的键位、亮度/描述与素材编辑；切换编辑模式不会修改键盘运行模式。设备信息、任务记录、权限诊断、帮助中心与新手引导使用弹窗展示。AhaType、云端账号、灯效映射、虚拟拨杆与固件升级仍未接入，界面不模拟这些能力或沿用旧 Agent 接管流程。
 
 默认窗口 1280 × 820，最小 900 × 640。界面测试覆盖画布与编辑器模式一致性、仅确认后提交、断线草稿恢复、弹窗与键盘操作、最小窗口宽度。
+
+### 语音输入与 AI 编程联动
+
+先在相邻 Runtime 仓库运行 `cargo build --bins --locked`，再启动或打包 Studio。原生准备脚本会构建并包含 `AhaKey Speech.app` 和 `ahakey-hook`。
+
+- 语音输入：Apple Speech 实时转写、按住／点击 F18 录音、原生悬浮窗、复制与原输入框自动粘贴。先启用后台输入观察并重启 Runtime，再请求麦克风／语音识别权限，选择当前输入设备并保存。自动粘贴另需辅助功能授权。试录只预览，不自动粘贴。
+- AI 编程联动：生成并手动合并 Claude Code、Cursor 或 Codex 项目 Hook 配置，关联在线键盘后启用。支持工作状态、单次批准／拒绝和实体按键确认；明确开启自动审批后，每次重新查询实体拨杆才决定是否批准。Codex 的 Hook 定义需在工具内审查信任。
+- Runtime 重启后重新选择语音输入来源、重新启用 AI 联动。退出 Studio 后 Runtime 继续处理已启用的功能。
+- AhaType 云端整理、云账号、状态驱动硬件灯光、Hook 一键安装／卸载尚未接入。原生真人录音、输入输出、真实工具会话与实体拨杆仍需验收；UI 测试使用模拟数据。
+
+详细契约与验收清单见 [语音与 Hook](../ahakey-runtime-rust/docs/voice-and-hooks.md)。

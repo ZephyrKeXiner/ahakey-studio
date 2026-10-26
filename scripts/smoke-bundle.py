@@ -13,11 +13,23 @@ binary=app/'Contents/MacOS/ahakey-studio'
 runtime=app/'Contents/Resources/bin/ahakey-runtime-rust'
 supervisor=app/'Contents/Resources/bin/ahakey-runtime-supervisor'
 helper=app/'Contents/Resources/bin/ahakey-input-monitor'
-for path in [binary,runtime,supervisor,helper]:
+speech=app/'Contents/Resources/bin/AhaKey Speech.app'
+hook=app/'Contents/Resources/bin/ahakey-hook'
+for path in [binary,runtime,supervisor,helper,hook,speech/'Contents/MacOS/ahakey-speech']:
     if not path.is_file():raise SystemExit(f'Build the debug app bundle first: missing {path}')
 info=plistlib.loads((app/'Contents/Info.plist').read_bytes())
 assert info.get('NSBluetoothAlwaysUsageDescription'), 'bundle must explain Bluetooth access'
 assert info['CFBundleIdentifier']=='ai.ahakey.studio'
+assert info.get('NSMicrophoneUsageDescription') and info.get('NSSpeechRecognitionUsageDescription')
+speech_info=plistlib.loads((speech/'Contents/Info.plist').read_bytes())
+assert speech_info.get('NSMicrophoneUsageDescription') and speech_info.get('NSSpeechRecognitionUsageDescription')
+subprocess.run(['/usr/bin/codesign','--verify','--strict',str(speech)],check=True)
+permissions=json.loads(subprocess.check_output([str(speech/'Contents/MacOS/ahakey-speech'),'--status'],text=True,timeout=10))
+assert permissions['type']=='permissions'
+for tool in ['claude','cursor','codex']:
+    config=json.loads(subprocess.check_output([str(hook),'--config','--tool',tool],text=True,timeout=5))
+    assert config.get('hooks')
+
 probe=root/'src-tauri/target/debug/examples/service_probe'
 with tempfile.TemporaryDirectory(prefix='ahakey-service-smoke-') as temporary:
     directory=Path(temporary)
@@ -46,6 +58,9 @@ with tempfile.TemporaryDirectory(prefix='ahakey-service-smoke-') as temporary:
             assert result['phase']=='running' and result['childPid']==child
             snapshot=json.loads(subprocess.check_output([str(root/'src-tauri/target/debug/examples/runtime_probe')],env=env,text=True,timeout=15))
             assert snapshot['snapshot']['devices'][0]['deviceId']=='mock-x1'
+            assert 'voice.control' in snapshot['methods'] and 'hooks.configure' in snapshot['methods']
+            assert snapshot['snapshot']['voice']['available'] is False
+            assert snapshot['snapshot']['hooks']['preferences']['enabled'] is False
             subprocess.run([str(probe),'stop',str(directory),str(runtime),str(supervisor)],check=True,capture_output=True,timeout=55)
             assert not discovery.exists()
             print('PASS: packaged Studio automatically starts bundled Mock Runtime; quitting Studio preserves Runtime; explicit stop removes discovery')
