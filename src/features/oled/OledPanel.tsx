@@ -25,18 +25,22 @@ export function OledPanel({
   runtime,
   controller,
   onSubmitted,
+  initialMode = 0,
 }: {
   device: Device;
   runtime: ClientView;
   controller: WorkspaceController;
   onSubmitted: (id: string) => void;
+  initialMode?: number;
 }) {
   const [document, setDocument] = useState<{
     value: OledDocument;
     generation: number;
     epoch: string;
   } | null>(null);
-  const [targetId, setTargetId] = useState("");
+  const [targetId, setTargetId] = useState(() =>
+    JSON.stringify({ kind: "modeDefault", mode: initialMode }),
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -401,7 +405,7 @@ export function OledPanel({
             </p>
           ) : null}
           <p className="field-hint">
-            设备提供资源状态与帧数，当前不导出原图。左侧预览来自本地文件；未上传的位置可能显示固件内置画面。
+            设备提供资源状态与帧数，当前不导出原图。素材预览来自本地文件；未上传的位置可能显示固件内置画面。
           </p>
         </article>
       </div>

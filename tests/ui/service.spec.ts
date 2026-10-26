@@ -59,13 +59,14 @@ test("closing the managed Runtime requires confirmation and does not automatical
     };
   });
   await page.goto("/");
+  await page.getByRole("button", { name: "设备信息", exact: true }).click();
   await page.getByRole("button", { name: "关闭 Runtime", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText(
-    "本次 Studio 会保持关闭状态",
-  );
+  await expect(
+    page.getByRole("dialog", { name: "关闭后台 Runtime？", exact: true }),
+  ).toContainText("本次 Studio 会保持关闭状态");
   expect(await page.evaluate(() => (window as any).serviceTest.stops)).toBe(0);
   await page
-    .getByRole("dialog")
+    .getByRole("dialog", { name: "关闭后台 Runtime？", exact: true })
     .getByRole("button", { name: "关闭 Runtime", exact: true })
     .click();
   await expect(

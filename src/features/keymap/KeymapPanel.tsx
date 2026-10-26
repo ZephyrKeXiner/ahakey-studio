@@ -32,13 +32,17 @@ export function KeymapPanel({
   device,
   runtime,
   controller,
+  selection,
 }: {
   device: Device;
   runtime: ClientView;
   controller: WorkspaceController;
+  selection?: { mode: number; key: number };
 }) {
-  const [mode, setMode] = useState(0);
-  const [selected, setSelected] = useState(0);
+  const [localMode, setMode] = useState(0);
+  const [localKey, setSelected] = useState(0);
+  const mode = selection?.mode ?? localMode;
+  const selected = selection?.key ?? localKey;
   const [document, setDocument] = useState<{
     data: ConfigurationDocument;
     generation: number;
@@ -208,7 +212,7 @@ export function KeymapPanel({
       ).filter(Boolean).length
     : 0;
   return (
-    <section className="keymap-panel">
+    <section className={`keymap-panel ${selection ? "embedded-panel" : ""}`}>
       <div className="page-heading">
         <div>
           <div className="eyebrow">KEY CONFIGURATION</div>
@@ -298,52 +302,59 @@ export function KeymapPanel({
           {controller.storageError}
         </p>
       ) : null}
-      <div className="mode-tabs" role="tablist" aria-label="键盘模式">
-        {[0, 1, 2, 3].map((item) => (
-          <button
-            key={item}
-            role="tab"
-            aria-selected={mode === item}
-            onClick={() => setMode(item)}
-          >
-            模式 {item + 1}
-            {Object.entries(deviceDraft?.keys ?? {}).some(
-              ([id, key]) => id.startsWith(`${item}:`) && key.dirty,
-            ) ? (
-              <span className="unsaved-dot" aria-label="有未写入修改" />
-            ) : null}
-          </button>
-        ))}
-      </div>
+      {!selection ? (
+        <div className="mode-tabs" role="tablist" aria-label="键盘模式">
+          {[0, 1, 2, 3].map((item) => (
+            <button
+              key={item}
+              role="tab"
+              aria-selected={mode === item}
+              onClick={() => setMode(item)}
+            >
+              模式 {item + 1}
+              {Object.entries(deviceDraft?.keys ?? {}).some(
+                ([id, key]) => id.startsWith(`${item}:`) && key.dirty,
+              ) ? (
+                <span className="unsaved-dot" aria-label="有未写入修改" />
+              ) : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="keymap-layout">
         <div className="key-selection">
-          <div className="key-selection-heading">
-            选择键位 <span>模式 {mode + 1}</span>
-          </div>
-          <div className="key-buttons">
-            {roleNames.map((name, index) => {
-              const draft = deviceDraft?.keys[keyId(mode, index)];
-              return (
-                <button
-                  key={name}
-                  className={`key-button ${selected === index ? "active" : ""}`}
-                  aria-pressed={selected === index}
-                  onClick={() => setSelected(index)}
-                >
-                  <span className="physical-key">
-                    {["◉", "✓", "×", "↵"][index]}
-                  </span>
-                  <strong>{name}</strong>
-                  <span>{actionLabel(draft?.action ?? null)}</span>
-                  {draft?.dirty ? <small>未写入</small> : null}
-                </button>
-              );
-            })}
-          </div>
-          <p className="field-hint">
-            Voice
-            键的实际语音行为还取决于固件路由，普通键位绑定不代表已切换语音模式。
-          </p>
+          {!selection ? (
+            <>
+              <div className="key-selection-heading">
+                选择键位 <span>模式 {mode + 1}</span>
+              </div>
+              <div className="key-buttons">
+                {roleNames.map((name, index) => {
+                  const draft = deviceDraft?.keys[keyId(mode, index)];
+                  return (
+                    <button
+                      key={name}
+                      className={`key-button ${selected === index ? "active" : ""}`}
+                      aria-pressed={selected === index}
+                      onClick={() => setSelected(index)}
+                    >
+                      <span className="physical-key">
+                        {["◉", "✓", "×", "↵"][index]}
+                      </span>
+                      <strong>{name}</strong>
+                      <span>{actionLabel(draft?.action ?? null)}</span>
+                      {draft?.dirty ? <small>未写入</small> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : null}
+          {selected === 0 ? (
+            <p className="field-hint">
+              Voice 键的语音行为取决于固件路由。AhaType 尚未接入。
+            </p>
+          ) : null}
           {deviceDraft?.history.length ? (
             <button
               className="text-button"

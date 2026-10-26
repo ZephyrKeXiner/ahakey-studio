@@ -101,15 +101,15 @@ test.beforeEach(async ({ page }) => {
             height: 80,
             intervalMs: 100,
             entries: [
-              {
-                target: { kind: "modeDefault", mode: 0 },
+              ...[0, 1, 2, 3].map((mode) => ({
+                target: { kind: "modeDefault", mode },
                 valid: false,
                 writeState: "empty",
                 frameCount: 0,
                 byteLength: 0,
                 crc32: 0,
                 maxFrames: 8,
-              },
+              })),
               {
                 target: { kind: "multiState", state: "done" },
                 valid: false,
@@ -204,6 +204,7 @@ test("prepares locally, confirms one target, and resumes the same task after rel
     page.getByRole("button", { name: "继续上传", exact: true }),
   ).toBeEnabled();
   await page.reload();
+  await page.getByRole("button", { name: /^任务记录/ }).click();
   await page.getByRole("button", { name: "继续上传", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "暂停上传", exact: true }),
@@ -266,4 +267,27 @@ test("crops a static image only after confirmation, without writing the device",
     };
   });
   expect(result).toEqual({ width: 160, height: 80, prepared: 1, writes: 0 });
+});
+
+test("canvas mode selects the matching OLED target without submitting on navigation", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("tab", { name: "Codex", exact: true }).click();
+  await page.getByRole("button", { name: "LCD 屏幕", exact: true }).click();
+  await expect(
+    page.getByRole("combobox", { name: "目标位置", exact: true }),
+  ).toHaveValue(JSON.stringify({ kind: "modeDefault", mode: 2 }));
+  expect(
+    await page.evaluate(() => (window as any).oledTest.requests),
+  ).toHaveLength(0);
+  await page
+    .getByLabel("选择图片或动图")
+    .setInputFiles("tests/fixtures/oled.png");
+  await page.getByRole("button", { name: "上传到键盘", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("模式 3");
+  await page.getByRole("button", { name: "确认上传", exact: true }).click();
+  expect(
+    await page.evaluate(() => (window as any).oledTest.requests[0].target),
+  ).toEqual({ kind: "modeDefault", mode: 2 });
 });

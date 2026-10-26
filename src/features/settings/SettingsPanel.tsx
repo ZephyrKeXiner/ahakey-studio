@@ -35,12 +35,15 @@ export function SettingsPanel({
   device,
   runtime,
   controller,
+  selectedMode,
 }: {
   device: Device;
   runtime: ClientView;
   controller: WorkspaceController;
+  selectedMode?: number;
 }) {
-  const [mode, setMode] = useState(0);
+  const [localMode, setMode] = useState(0);
+  const mode = selectedMode ?? localMode;
   const [document, setDocument] = useState<{
     data: ConfigurationDocument;
     generation: number;
@@ -265,7 +268,9 @@ export function SettingsPanel({
     );
   }
   return (
-    <section className="settings-panel">
+    <section
+      className={`settings-panel ${selectedMode !== undefined ? "embedded-panel" : ""}`}
+    >
       <div className="page-heading">
         <div>
           <div className="eyebrow">DEVICE SETTINGS</div>
@@ -355,24 +360,26 @@ export function SettingsPanel({
         <h2>全局亮度</h2>
         {field("brightness")}
       </article>
-      <div className="mode-tabs" role="tablist" aria-label="描述所属模式">
-        {[0, 1, 2, 3].map((item) => (
-          <button
-            key={item}
-            role="tab"
-            aria-selected={mode === item}
-            onClick={() => setMode(item)}
-          >
-            模式 {item + 1}
-            {Object.entries(draft?.fields ?? {}).some(
-              ([id, field]) =>
-                id.startsWith(`description:${item}:`) && field.dirty,
-            ) ? (
-              <span className="unsaved-dot" aria-label="有未写入修改" />
-            ) : null}
-          </button>
-        ))}
-      </div>
+      {selectedMode === undefined ? (
+        <div className="mode-tabs" role="tablist" aria-label="描述所属模式">
+          {[0, 1, 2, 3].map((item) => (
+            <button
+              key={item}
+              role="tab"
+              aria-selected={mode === item}
+              onClick={() => setMode(item)}
+            >
+              模式 {item + 1}
+              {Object.entries(draft?.fields ?? {}).some(
+                ([id, field]) =>
+                  id.startsWith(`description:${item}:`) && field.dirty,
+              ) ? (
+                <span className="unsaved-dot" aria-label="有未写入修改" />
+              ) : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <article className="system-card">
         <h2>按键描述</h2>
         <p>

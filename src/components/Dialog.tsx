@@ -4,8 +4,10 @@ export function Dialog({
   children,
   actions,
   onClose,
+  className = "",
 }: {
   title: string;
+  className?: string;
   children: ReactNode;
   actions: ReactNode;
   onClose: () => void;
@@ -20,7 +22,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className="confirm-dialog"
+      className={`confirm-dialog ${className}`}
       aria-labelledby={titleId}
       onCancel={onClose}
     >

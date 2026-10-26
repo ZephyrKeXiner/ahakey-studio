@@ -242,6 +242,16 @@ async function install(
 }
 async function editor(page: Page) {
   await page.goto("/");
+  {
+    const taskSheet = page.getByRole("dialog", {
+      name: "任务记录",
+      exact: true,
+    });
+    if (await taskSheet.isVisible())
+      await taskSheet
+        .getByRole("button", { name: "完成", exact: true })
+        .click();
+  }
   await page.getByRole("button", { name: "亮度与描述", exact: true }).click();
 }
 async function sync(page: Page) {
@@ -310,6 +320,16 @@ test("only changed descriptions are sent, newer edits survive completion and rel
     page.getByRole("button", { name: "写入修改 · 1", exact: true }),
   ).toBeDisabled();
   await page.reload();
+  {
+    const taskSheet = page.getByRole("dialog", {
+      name: "任务记录",
+      exact: true,
+    });
+    if (await taskSheet.isVisible())
+      await taskSheet
+        .getByRole("button", { name: "完成", exact: true })
+        .click();
+  }
   await page.getByRole("button", { name: "亮度与描述", exact: true }).click();
   await expect(description).toHaveValue("New draft");
   await page.evaluate(() => (window as any).fieldsTest.complete());
@@ -425,6 +445,16 @@ test("hardware reading survives UI reload, blocks writes, and requires explicit 
   ).toBeDisabled();
   await page.getByRole("spinbutton", { name: "亮度" }).fill("51");
   await page.reload();
+  {
+    const taskSheet = page.getByRole("dialog", {
+      name: "任务记录",
+      exact: true,
+    });
+    if (await taskSheet.isVisible())
+      await taskSheet
+        .getByRole("button", { name: "完成", exact: true })
+        .click();
+  }
   await page.getByRole("button", { name: "亮度与描述", exact: true }).click();
   await expect(page.getByText("正在从设备读取 · 第 1 / 3 次")).toBeVisible();
   expect(
@@ -492,6 +522,16 @@ test("configuration pause and explicit resume retain original task and newer dra
   expect(
     await page.evaluate(() => (window as any).fieldsTest.state.controls.length),
   ).toBe(1);
+  {
+    const taskSheet = page.getByRole("dialog", {
+      name: "任务记录",
+      exact: true,
+    });
+    if (await taskSheet.isVisible())
+      await taskSheet
+        .getByRole("button", { name: "完成", exact: true })
+        .click();
+  }
   await page.getByRole("button", { name: "亮度与描述", exact: true }).click();
   await page
     .getByRole("textbox", { name: "模式 1 · Voice 键描述", exact: true })
@@ -523,6 +563,16 @@ test("configuration pause and explicit resume retain original task and newer dra
     path: "test-results/configuration-resume.png",
     fullPage: true,
   });
+  {
+    const taskSheet = page.getByRole("dialog", {
+      name: "任务记录",
+      exact: true,
+    });
+    if (await taskSheet.isVisible())
+      await taskSheet
+        .getByRole("button", { name: "完成", exact: true })
+        .click();
+  }
   await page.getByRole("button", { name: "亮度与描述", exact: true }).click();
   await expect(
     page.getByRole("textbox", { name: "模式 1 · Voice 键描述", exact: true }),
@@ -530,4 +580,28 @@ test("configuration pause and explicit resume retain original task and newer dra
   await expect(
     page.getByRole("button", { name: "写入设置 · 1", exact: true }),
   ).toBeEnabled();
+});
+
+test("light inspector follows the canvas mode and submits only that description", async ({
+  page,
+}) => {
+  await install(page);
+  await page.goto("/");
+  await page.getByRole("tab", { name: "Codex", exact: true }).click();
+  await page.getByRole("button", { name: "灯条与亮度", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "模式 3 · 批准键描述", exact: true })
+    .fill("Accept");
+  expect(
+    await page.evaluate(() => (window as any).fieldsTest.state.requests),
+  ).toHaveLength(0);
+  await page.getByRole("button", { name: "写入设置 · 1", exact: true }).click();
+  await page.getByRole("button", { name: "确认写入设置", exact: true }).click();
+  const requests = await page.evaluate(
+    () => (window as any).fieldsTest.state.requests,
+  );
+  expect(requests).toHaveLength(1);
+  expect(requests[0].descriptions).toEqual([
+    { mode: 2, index: 1, description: "Accept" },
+  ]);
 });

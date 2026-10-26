@@ -117,7 +117,7 @@ test("saves the next-launch preference and applies it only after explicit stop a
   ).toContainText("未启用输入观察");
   await page.getByRole("button", { name: "关闭 Runtime", exact: true }).click();
   await page
-    .getByRole("dialog")
+    .getByRole("dialog", { name: "关闭后台 Runtime？", exact: true })
     .getByRole("button", { name: "关闭 Runtime", exact: true })
     .click();
   await page.getByRole("button", { name: "启动 Runtime", exact: true }).click();
