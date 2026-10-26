@@ -148,6 +148,22 @@ impl RuntimeSession {
             .try_send(Command::Reconnect)
             .map_err(|_| ClientError::new("CLIENT_BUSY", "连接正在恢复，请稍后重试。"))
     }
+    pub async fn hooks(
+        &self,
+        generation: u64,
+        method: &str,
+        params: Value,
+    ) -> Result<Value, ClientError> {
+        let method = match method {
+            "hooks.get" => "hooks.get",
+            "hooks.configure" => "hooks.configure",
+            "hooks.decide" => "hooks.decide",
+            "hooks.select" => "hooks.select",
+            _ => return Err(ClientError::new("INVALID_PARAMS", "未知 AI 联动操作。")),
+        };
+        self.request(generation, method, params, method != "hooks.get")
+            .await
+    }
     pub async fn voice(
         &self,
         generation: u64,
@@ -484,6 +500,9 @@ impl Driver {
         inspection.snapshot.sequence = sequence.to_string();
         let kind = event["type"].as_str().ok_or_else(ClientError::protocol)?;
         match kind {
+            "hooks.changed" => {
+                inspection.snapshot.hooks = Some(event["data"].clone());
+            }
             "voice.changed" => {
                 inspection.snapshot.voice = Some(event["data"].clone());
             }

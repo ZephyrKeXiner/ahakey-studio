@@ -11,7 +11,10 @@ profile = 'release' if '--release' in sys.argv or (os.environ.get('TAURI_ENV_PLA
 runtime = Path(os.environ.get('AHAKEY_RUNTIME_BINARY', root.parent / f'ahakey-runtime-rust/target/{profile}/ahakey-runtime-rust')).resolve()
 if not runtime.is_file():
     raise SystemExit(f'Build the matching Runtime ({profile}) first, or set AHAKEY_RUNTIME_BINARY.')
-inputs = [(runtime, 'ahakey-runtime-rust')]
+hook = runtime.with_name('ahakey-hook')
+if not hook.is_file():
+    raise SystemExit('Build the matching ahakey-hook binary with cargo build --bins first.')
+inputs = [(runtime, 'ahakey-runtime-rust'), (hook, 'ahakey-hook')]
 if sys.platform == 'darwin':
     helper_override = os.environ.get('AHAKEY_INPUT_MONITOR_BINARY')
     if helper_override:

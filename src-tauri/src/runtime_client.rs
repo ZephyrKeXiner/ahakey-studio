@@ -125,6 +125,8 @@ pub struct Snapshot {
     pub input: Option<InputState>,
     #[serde(default)]
     pub voice: Option<Value>,
+    #[serde(default)]
+    pub hooks: Option<Value>,
 }
 
 #[derive(Clone, Debug, Serialize)]

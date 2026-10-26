@@ -56,7 +56,7 @@ const topics: { title: string; icon: IconName; paragraphs: string[] }[] = [
     icon: "microphone",
     paragraphs: [
       "在语音输入中授予权限，选择 AhaKey 输入设备并启用按键录音。支持按住或点击录音、Apple Speech 实时转写与原生悬浮窗；AhaType 云端整理尚未接入。",
-      "当前可编辑全局亮度；灯效状态映射、云端账号和固件升级仍待接入。",
+      "AI 编程联动中生成工具 Hook 配置、启用关联键盘，可查看工作状态、批准或拒绝请求。自动批准需勾选允许自动批准且实体拨杆在自动档。灯效状态映射、云端账号和固件升级仍待接入。",
     ],
   },
 ];

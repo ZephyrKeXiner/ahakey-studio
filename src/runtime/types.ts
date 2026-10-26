@@ -38,6 +38,7 @@ export interface Inspection {
     operations: Operation[];
     input?: InputState | null;
     voice?: VoiceView | null;
+    hooks?: HooksView | null;
   };
 }
 export interface RuntimeError {
@@ -182,4 +183,17 @@ export interface VoiceView {
   speech: string;
   accessibility: boolean;
   output: string | null;
+}
+
+export interface HookPreferences {
+  enabled:boolean; deviceId:string|null; allowAutomatic:boolean; inputDeviceId:string|null; approveUsage:number|null; rejectUsage:number|null;
+}
+export interface HookApproval {
+  requestId:string; decision:string; expiresAtMs:number;
+  context:{ tool:string; sessionId:string; event:string; cwd:string; toolName:string; summary:string; };
+}
+export interface HooksView {
+  revision:number; preferences:HookPreferences; approvals:HookApproval[];
+  sessions:{tool:string; sessionId:string; cwd:string; event:string; status:string; updatedAtMs:number}[];
+  selectedRequestId:string|null; learning:string|null;
 }

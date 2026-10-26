@@ -7,6 +7,8 @@ fn main() {
             "runtime_reconnect",
             "runtime_configuration",
             "runtime_voice",
+            "runtime_hooks",
+            "runtime_hook_config",
             "runtime_read_configuration",
             "runtime_keymap",
             "runtime_patch_configuration",

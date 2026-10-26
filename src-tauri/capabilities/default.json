@@ -27,6 +27,8 @@
     "allow-runtime-input-settings",
     "allow-runtime-set-input-monitor",
     "allow-runtime-patch-configuration",
-    "allow-runtime-voice"
+    "allow-runtime-voice",
+    "allow-runtime-hooks",
+    "allow-runtime-hook-config"
   ]
 }

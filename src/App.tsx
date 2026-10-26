@@ -25,6 +25,7 @@ import type { ClientView, Device } from "./runtime/types";
 import { KeymapPanel } from "./features/keymap/KeymapPanel";
 import { useWorkspace } from "./features/keymap/useWorkspace";
 import { VoicePanel, voiceStatus } from "./features/voice/VoicePanel";
+import { HooksPanel } from "./features/hooks/HooksPanel";
 import "./App.css";
 
 type Sheet =
@@ -35,6 +36,7 @@ type Sheet =
   | "welcome"
   | "voice"
   | "firmware"
+  | "hooks"
   | "lever"
   | "about";
 const sheetTitles: Record<Sheet, string> = {
@@ -45,7 +47,8 @@ const sheetTitles: Record<Sheet, string> = {
   welcome: "开始使用 AhaKey",
   voice: "语音输入",
   firmware: "固件升级",
-  lever: "拨杆状态",
+  lever: "AI 编程联动 · 拨杆",
+  hooks: "AI 编程联动",
   about: "关于 AhaKey Studio",
 };
 const partIcons: Record<CanvasPart, IconName> = {
@@ -259,6 +262,7 @@ export default function App() {
           </button>
         </div>
         <div className="toolbar-spacer" />
+        <button className="toolbar-button" onClick={() => openSheet("hooks")}>AI 编程联动</button>
         <button className="voice-status" onClick={() => openSheet("voice")}>
           <i className="status-dot gray" />
           <span>
@@ -545,15 +549,7 @@ export default function App() {
               </p>
             </div>
           ) : null}
-          {sheet === "lever" ? (
-            <div className="feature-placeholder">
-              <h3>{leverLabel(online ? device?.lever : null)}</h3>
-              <p>
-                此处显示 Runtime
-                上报的实体拨杆状态。当前版本不提供虚拟拨杆切换与 Hook 批准功能。
-              </p>
-            </div>
-          ) : null}
+          {sheet === "lever" || sheet === "hooks" ? <HooksPanel key={runtime.generation} runtime={runtime}/> : null}
           {sheet === "about" ? (
             <div className="feature-placeholder">
               <StudioIcon name="keyboard" size={48} />

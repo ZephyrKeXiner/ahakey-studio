@@ -1830,3 +1830,5 @@ input[type="text"] {
 .voice-panel select, .voice-panel textarea { width: 100%; padding: 8px; }
 .voice-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .voice-actions button { padding: 6px 10px; border-radius: 6px; border: 1px solid #d9d9df; background: white; }
+
+.hook-summary { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow: auto; font-size: 12px; }

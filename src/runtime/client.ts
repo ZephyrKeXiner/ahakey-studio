@@ -214,3 +214,18 @@ export function voiceRequest(
   requireDesktop();
   return invoke("runtime_voice", { generation, method, params });
 }
+
+export function hooksRequest(
+  generation: number,
+  method: "hooks.get" | "hooks.configure" | "hooks.decide" | "hooks.select",
+  params: unknown,
+): Promise<unknown> {
+  requireDesktop();
+  return invoke("runtime_hooks", { generation, method, params });
+}
+export function hookConfig(
+  tool: "claude" | "cursor" | "codex",
+): Promise<unknown> {
+  requireDesktop();
+  return invoke("runtime_hook_config", { tool });
+}

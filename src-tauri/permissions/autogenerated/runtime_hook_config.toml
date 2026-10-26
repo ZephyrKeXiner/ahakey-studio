@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-hook-config"
+description = "Enables the runtime_hook_config command without any pre-configured scope."
+commands.allow = ["runtime_hook_config"]
+
+[[permission]]
+identifier = "deny-runtime-hook-config"
+description = "Denies the runtime_hook_config command without any pre-configured scope."
+commands.deny = ["runtime_hook_config"]

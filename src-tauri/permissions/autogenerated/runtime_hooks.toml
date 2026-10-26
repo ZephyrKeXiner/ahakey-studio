@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-hooks"
+description = "Enables the runtime_hooks command without any pre-configured scope."
+commands.allow = ["runtime_hooks"]
+
+[[permission]]
+identifier = "deny-runtime-hooks"
+description = "Denies the runtime_hooks command without any pre-configured scope."
+commands.deny = ["runtime_hooks"]

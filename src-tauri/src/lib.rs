@@ -63,6 +63,48 @@ fn runtime_reconnect(bridge: State<'_, RuntimeBridge>) -> Result<(), ClientError
 }
 
 #[tauri::command]
+async fn runtime_hooks(
+    generation: u64,
+    method: String,
+    params: Value,
+    bridge: State<'_, RuntimeBridge>,
+) -> Result<Value, ClientError> {
+    bridge.client.hooks(generation, &method, params).await
+}
+#[tauri::command]
+async fn runtime_hook_config(tool: String, app: tauri::AppHandle) -> Result<Value, ClientError> {
+    if !["claude", "cursor", "codex"].contains(&tool.as_str()) {
+        return Err(ClientError::new("INVALID_PARAMS", "未知工具。"));
+    }
+    let binary = std::env::var_os("AHAKEY_RUNTIME_BINARY")
+        .map(std::path::PathBuf::from)
+        .map(|p| p.with_file_name("ahakey-hook"))
+        .unwrap_or(
+            app.path()
+                .resource_dir()
+                .map_err(|_| ClientError::new("HOOK_UNAVAILABLE", "无法定位 Hook 组件。"))?
+                .join("bin/ahakey-hook"),
+        );
+    let path = runtime_client::default_discovery_path()?;
+    let output = tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        tokio::process::Command::new(binary)
+            .args(["--config", "--tool", &tool, "--discovery"])
+            .arg(path)
+            .kill_on_drop(true)
+            .output(),
+    )
+    .await
+    .map_err(|_| ClientError::new("HOOK_TIMEOUT", "生成接入配置超时。"))?
+    .map_err(|_| ClientError::new("HOOK_UNAVAILABLE", "未找到匹配的 Hook 组件。"))?;
+    if !output.status.success() {
+        return Err(ClientError::new("HOOK_CONFIG_FAILED", "无法生成接入配置。"));
+    }
+    serde_json::from_slice(&output.stdout)
+        .map_err(|_| ClientError::new("HOOK_CONFIG_FAILED", "Hook 配置格式错误。"))
+}
+
+#[tauri::command]
 async fn runtime_voice(
     generation: u64,
     method: String,
@@ -262,6 +304,8 @@ pub fn run() {
             runtime_reconnect,
             runtime_configuration,
             runtime_voice,
+            runtime_hooks,
+            runtime_hook_config,
             runtime_read_configuration,
             runtime_keymap,
             runtime_patch_configuration,
