@@ -24,6 +24,7 @@ import {
 import type { ClientView, Device } from "./runtime/types";
 import { KeymapPanel } from "./features/keymap/KeymapPanel";
 import { useWorkspace } from "./features/keymap/useWorkspace";
+import { VoicePanel, voiceStatus } from "./features/voice/VoicePanel";
 import "./App.css";
 
 type Sheet =
@@ -42,7 +43,7 @@ const sheetTitles: Record<Sheet, string> = {
   system: "权限诊断",
   help: "AhaKey Studio 帮助中心",
   welcome: "开始使用 AhaKey",
-  voice: "AhaType · 语音输入",
+  voice: "语音输入",
   firmware: "固件升级",
   lever: "拨杆状态",
   about: "关于 AhaKey Studio",
@@ -261,8 +262,8 @@ export default function App() {
         <button className="voice-status" onClick={() => openSheet("voice")}>
           <i className="status-dot gray" />
           <span>
-            <strong>AhaType</strong>
-            <small>尚未接入</small>
+            <strong>语音输入</strong>
+            <small>{online ? (voiceStatus[runtime.inspection?.snapshot.voice?.status ?? "unavailable"]) : "未连接"}</small>
           </span>
           <span className="inactive-toggle" aria-hidden="true" />
         </button>
@@ -323,7 +324,7 @@ export default function App() {
               </button>
               <hr />
               <button onClick={() => openSheet("voice")}>
-                云端账号 · AhaType<span>未接入</span>
+                语音输入 · Apple Speech
               </button>
               <button onClick={() => openSheet("help")}>
                 帮助中心
@@ -534,25 +535,7 @@ export default function App() {
               </button>
             </div>
           ) : null}
-          {sheet === "voice" ? (
-            <div className="feature-placeholder">
-              <StudioIcon name="microphone" size={40} />
-              <h3>AhaType 尚未接入</h3>
-              <p>
-                当前版本可配置 Voice
-                键的动作。音频录制、转写、文字整理与云端账号将在后续接入。
-              </p>
-              <button
-                className="secondary-button"
-                onClick={() => {
-                  setSheet(null);
-                  selectPart("keymap", 0);
-                }}
-              >
-                配置 Voice 键
-              </button>
-            </div>
-          ) : null}
+          {sheet === "voice" ? <VoicePanel key={runtime.generation} runtime={runtime}/> : null}
           {sheet === "firmware" ? (
             <div className="feature-placeholder">
               <StudioIcon name="keyboard" size={40} />

@@ -35,6 +35,19 @@ if sys.platform == 'darwin':
     if not helper.is_file():
         raise SystemExit('Missing matching ahakey-input-monitor; set AHAKEY_INPUT_MONITOR_BINARY or place it beside the supplied Runtime.')
     inputs.append((helper, 'ahakey-input-monitor'))
+speech_bundle = None
+if sys.platform == 'darwin':
+    if os.environ.get('AHAKEY_RUNTIME_BINARY'):
+        speech_bundle = runtime.with_name('AhaKey Speech.app')
+    else:
+        speech_bundle = runtime.with_name('AhaKey Speech.app')
+        builder = root.parent / 'ahakey-runtime-rust/scripts/build-speech-helper.py'
+        triple = os.environ.get('TAURI_ENV_TARGET_TRIPLE', '')
+        architecture = ('x86_64' if triple.startswith('x86_64') else 'arm64' if triple.startswith('aarch64') else platform.machine())
+        subprocess.run([sys.executable, str(builder), '--output', str(speech_bundle), '--architecture', architecture,
+                        '--identity', os.environ.get('APPLE_SIGNING_IDENTITY', '-')], check=True)
+    if not (speech_bundle / 'Contents/MacOS/ahakey-speech').is_file():
+        raise SystemExit('Missing matching AhaKey Speech.app beside Runtime; build the speech helper first.')
 command = ['cargo', 'build', '--manifest-path', 'src-tauri/Cargo.toml', '--bin', 'ahakey-runtime-supervisor', '--locked']
 if profile == 'release':
     command.append('--release')
@@ -45,11 +58,18 @@ if sys.platform == 'darwin':
     # Refuse mixed architectures: a successful bundle must be runnable on every included Runtime architecture.
     architectures = lambda path: set(subprocess.check_output(['/usr/bin/lipo', '-archs', str(path)], text=True).split())
     required = architectures(runtime)
+    if speech_bundle and not required.issubset(architectures(speech_bundle / 'Contents/MacOS/ahakey-speech')):
+        raise SystemExit('Speech helper architecture does not match Runtime.')
     for binary, name in inputs:
         if not required.issubset(architectures(binary)):
             raise SystemExit(f'{name} does not support Runtime architectures: {sorted(required)}')
 for destination in [root / 'src-tauri/resources/bin', root / f'src-tauri/target/{profile}/bin']:
     destination.mkdir(parents=True, exist_ok=True)
+    if speech_bundle:
+        staged_speech = destination / 'AhaKey Speech.app'
+        if staged_speech.exists():
+            shutil.rmtree(staged_speech)
+        shutil.copytree(speech_bundle, staged_speech)
     for source, name in inputs:
         target = destination / name
         temporary = target.with_suffix('.next')

@@ -7,12 +7,24 @@ use serde::Deserialize;
 pub enum SettingsPane {
     Bluetooth,
     InputMonitoring,
+    Microphone,
+    SpeechRecognition,
+    Accessibility,
 }
 impl SettingsPane {
     fn url(&self) -> &'static str {
         match self {
             Self::Bluetooth => {
                 "x-apple.systempreferences:com.apple.preference.security?Privacy_Bluetooth"
+            }
+            Self::Microphone => {
+                "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+            }
+            Self::SpeechRecognition => {
+                "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition"
+            }
+            Self::Accessibility => {
+                "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
             }
             Self::InputMonitoring => {
                 "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
@@ -54,7 +66,7 @@ mod tests {
         for invalid in [
             "file:///tmp/example",
             "https://example.com",
-            "accessibility",
+            "unknownPane",
             "bluetooth;open",
         ] {
             assert!(serde_json::from_value::<SettingsPane>(serde_json::json!(invalid)).is_err());

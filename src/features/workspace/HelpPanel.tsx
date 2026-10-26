@@ -55,8 +55,8 @@ const topics: { title: string; icon: IconName; paragraphs: string[] }[] = [
     title: "语音与灯效",
     icon: "microphone",
     paragraphs: [
-      "当前版本尚未接入 AhaType 音频转写与文字整理。Voice 键的快捷键配置不等于开启语音服务。",
-      "当前可编辑全局亮度；灯效状态映射、云端账号、固件升级和独立悬浮窗仍待接入。",
+      "在语音输入中授予权限，选择 AhaKey 输入设备并启用按键录音。支持按住或点击录音、Apple Speech 实时转写与原生悬浮窗；AhaType 云端整理尚未接入。",
+      "当前可编辑全局亮度；灯效状态映射、云端账号和固件升级仍待接入。",
     ],
   },
 ];

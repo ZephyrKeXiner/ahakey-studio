@@ -63,6 +63,16 @@ fn runtime_reconnect(bridge: State<'_, RuntimeBridge>) -> Result<(), ClientError
 }
 
 #[tauri::command]
+async fn runtime_voice(
+    generation: u64,
+    method: String,
+    params: Value,
+    bridge: State<'_, RuntimeBridge>,
+) -> Result<Value, ClientError> {
+    bridge.client.voice(generation, &method, params).await
+}
+
+#[tauri::command]
 async fn runtime_configuration(
     generation: u64,
     device_id: String,
@@ -251,6 +261,7 @@ pub fn run() {
             runtime_unwatch,
             runtime_reconnect,
             runtime_configuration,
+            runtime_voice,
             runtime_read_configuration,
             runtime_keymap,
             runtime_patch_configuration,

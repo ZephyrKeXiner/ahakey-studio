@@ -4,5 +4,7 @@
 <dict>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>AhaKey Studio 的后台 Runtime 使用蓝牙连接键盘，读取设置并执行你确认的配置修改。</string>
+<key>NSMicrophoneUsageDescription</key><string>AhaKey 的语音组件使用麦克风录音并转写。</string>
+<key>NSSpeechRecognitionUsageDescription</key><string>将语音转换为文字；Apple Speech 可能联网处理音频。</string>
 </dict>
 </plist>

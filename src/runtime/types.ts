@@ -37,6 +37,7 @@ export interface Inspection {
     devices: Device[];
     operations: Operation[];
     input?: InputState | null;
+    voice?: VoiceView | null;
   };
 }
 export interface RuntimeError {
@@ -160,4 +161,25 @@ export interface ConfigurationPatch {
   baseToken: string;
   brightnessPercent?: number;
   descriptions?: DescriptionPatch[];
+}
+
+export interface VoicePreferences {
+  enabled: boolean;
+  inputDeviceId: string | null;
+  trigger: "hold" | "toggle";
+  locale: string;
+  autoInsert: boolean;
+  onDeviceOnly: boolean;
+}
+export interface VoiceView {
+  available: boolean;
+  status: string;
+  preferences: VoicePreferences;
+  sessionId: string | null;
+  text: string;
+  error: string | null;
+  microphone: string;
+  speech: string;
+  accessibility: boolean;
+  output: string | null;
 }

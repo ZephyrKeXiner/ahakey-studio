@@ -148,6 +148,21 @@ impl RuntimeSession {
             .try_send(Command::Reconnect)
             .map_err(|_| ClientError::new("CLIENT_BUSY", "连接正在恢复，请稍后重试。"))
     }
+    pub async fn voice(
+        &self,
+        generation: u64,
+        method: &str,
+        params: Value,
+    ) -> Result<Value, ClientError> {
+        let method = match method {
+            "voice.get" => "voice.get",
+            "voice.configure" => "voice.configure",
+            "voice.control" => "voice.control",
+            _ => return Err(ClientError::new("INVALID_PARAMS", "未知语音操作。")),
+        };
+        self.request(generation, method, params, method != "voice.get")
+            .await
+    }
     pub async fn configuration(
         &self,
         generation: u64,
@@ -469,6 +484,10 @@ impl Driver {
         inspection.snapshot.sequence = sequence.to_string();
         let kind = event["type"].as_str().ok_or_else(ClientError::protocol)?;
         match kind {
+            "voice.changed" => {
+                inspection.snapshot.voice = Some(event["data"].clone());
+            }
+
             "input.changed" => {
                 inspection.snapshot.input = Some(
                     serde_json::from_value(event["data"].clone())

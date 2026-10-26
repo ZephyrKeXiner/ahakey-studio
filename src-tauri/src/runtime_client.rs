@@ -123,6 +123,8 @@ pub struct Snapshot {
     pub operations: Vec<Operation>,
     #[serde(default)]
     pub input: Option<InputState>,
+    #[serde(default)]
+    pub voice: Option<Value>,
 }
 
 #[derive(Clone, Debug, Serialize)]

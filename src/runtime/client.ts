@@ -161,7 +161,12 @@ export function controlOperation(
   });
 }
 
-export type SettingsPane = "bluetooth" | "inputMonitoring";
+export type SettingsPane =
+  | "bluetooth"
+  | "inputMonitoring"
+  | "microphone"
+  | "speechRecognition"
+  | "accessibility";
 export function openSystemSettings(pane: SettingsPane): Promise<void> {
   requireDesktop();
   return invoke("system_open_settings", { pane });
@@ -199,4 +204,13 @@ export function startConfigurationRead(
 ): Promise<import("./types").ConfigurationRead> {
   requireDesktop();
   return invoke("runtime_read_configuration", { generation, deviceId });
+}
+
+export function voiceRequest(
+  generation: number,
+  method: "voice.get" | "voice.configure" | "voice.control",
+  params: unknown,
+): Promise<import("./types").VoiceView> {
+  requireDesktop();
+  return invoke("runtime_voice", { generation, method, params });
 }

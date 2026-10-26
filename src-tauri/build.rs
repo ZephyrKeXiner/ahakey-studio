@@ -6,6 +6,7 @@ fn main() {
             "runtime_unwatch",
             "runtime_reconnect",
             "runtime_configuration",
+            "runtime_voice",
             "runtime_read_configuration",
             "runtime_keymap",
             "runtime_patch_configuration",

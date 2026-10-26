@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-runtime-voice"
+description = "Enables the runtime_voice command without any pre-configured scope."
+commands.allow = ["runtime_voice"]
+
+[[permission]]
+identifier = "deny-runtime-voice"
+description = "Denies the runtime_voice command without any pre-configured scope."
+commands.deny = ["runtime_voice"]

@@ -73,9 +73,9 @@ test("help, capability notices and keyboard access work without a Runtime", asyn
   await page.screenshot({ path: "test-results/native-help.png" });
   await page.keyboard.press("Escape");
   await expect(help).not.toBeVisible();
-  await page.getByRole("button", { name: /AhaType/ }).click();
-  await expect(page.getByRole("dialog")).toContainText("AhaType 尚未接入");
-  await expect(page.getByRole("dialog").getByRole("textbox")).toHaveCount(0);
+  await page.getByRole("button", { name: /^语音输入/ }).click();
+  await expect(page.getByRole("dialog")).toContainText("请连接支持语音输入的新版 Runtime");
+  await expect(page.getByRole("textbox", { name: "语音转写结果" })).toHaveValue("");
   await page.keyboard.press("Escape");
   await page.getByLabel("更多菜单", { exact: true }).click();
   await page.getByRole("button", { name: /固件升级/ }).click();
