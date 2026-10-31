@@ -1,4 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
+// Existing-user workspace fixture; first-install behavior is covered separately.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("ahakey.studio.setup.v1", "seen"),
+  );
+});
 
 async function install(page: Page) {
   await page.addInitScript(() => {
@@ -80,6 +86,13 @@ async function install(page: Page) {
             },
           },
         };
+    let codex = {
+      installed: false,
+      needsRepair: false,
+      configPath: "/fixture/.codex/hooks.json",
+      detected: true,
+      installedAtMs: 0,
+    };
     const calls: any[] = [];
     const listeners = new Map();
     function publish() {
@@ -92,6 +105,19 @@ async function install(page: Page) {
       final(text: string) {
         view.inspection.snapshot.voice.text = text;
         view.inspection.snapshot.voice.status = "completed";
+        publish();
+      },
+      codexEvent() {
+        view.inspection.snapshot.hooks.sessions = [
+          {
+            tool: "codex",
+            sessionId: "real-session",
+            cwd: "/project",
+            event: "SessionStart",
+            status: "working",
+            updatedAtMs: Date.now() + 1,
+          },
+        ];
         publish();
       },
       approval() {
@@ -110,6 +136,11 @@ async function install(page: Page) {
             },
           },
         ];
+        publish();
+      },
+      disableHooks() {
+        view.inspection.snapshot.hooks.preferences.enabled = false;
+        view.inspection.snapshot.hooks.preferences.allowAutomatic = false;
         publish();
       },
       disconnect() {
@@ -173,6 +204,13 @@ async function install(page: Page) {
             ).decision = args.params.decision;
           publish();
           return structuredClone(hooks);
+        }
+        if (command === "codex_integration") {
+          if (args.action !== "status") calls.push({ command, ...args });
+          if (args.action === "install")
+            codex = { ...codex, installed: true, installedAtMs: Date.now() };
+          if (args.action === "remove") codex = { ...codex, installed: false };
+          return { ...codex };
         }
         if (command === "runtime_hook_config") {
           calls.push({ command, ...args });
@@ -251,9 +289,9 @@ test("AI integration requires explicit enable and approval targets the displayed
   expect(
     await page.evaluate(() => (window as any).featuresTest.calls),
   ).toHaveLength(0);
-  await page.getByLabel("关联键盘").selectOption("x1");
-  await page.getByLabel("启用 AI 编程联动", { exact: true }).check();
-  await page.getByRole("button", { name: "应用联动设置" }).click();
+  await expect(page.getByLabel("关联键盘")).toBeHidden();
+  await expect(page.getByRole("button", { name: "生成接入配置" })).toBeHidden();
+  await page.getByRole("radio", { name: "手动确认", exact: true }).check();
   expect(
     await page.evaluate(() => (window as any).featuresTest.calls[0]),
   ).toMatchObject({
@@ -270,6 +308,7 @@ test("AI integration requires explicit enable and approval targets the displayed
     method: "hooks.decide",
     params: { requestId: "approval-123", decision: "deny" },
   });
+  await page.getByText("高级设置与记录", { exact: true }).click();
   await page.getByLabel("工具", { exact: true }).selectOption("codex");
   await page.getByRole("button", { name: "生成接入配置" }).click();
   await expect(
@@ -277,6 +316,104 @@ test("AI integration requires explicit enable and approval targets the displayed
   ).toContainText("--tool codex");
   await page.evaluate(() => (window as any).featuresTest.disconnect());
   await expect(
-    page.getByRole("button", { name: "应用联动设置" }),
+    page.getByRole("radio", { name: "手动确认", exact: true }),
   ).toBeDisabled();
+});
+
+test("Codex connection requires confirmation and a real event before reporting receipt", async ({
+  page,
+}) => {
+  await install(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "AI 编程联动", exact: true }).click();
+  const card = page.getByRole("region", { name: "Codex 接入" });
+  await card.getByRole("button", { name: "连接 Codex", exact: true }).click();
+  expect(
+    await page.evaluate(() => (window as any).featuresTest.calls),
+  ).toHaveLength(0);
+  await card.getByRole("button", { name: "确认连接 Codex" }).click();
+  await expect(card).toContainText("已接入，联动关闭");
+  await expect(
+    card.getByRole("button", { name: "移除 Codex 接入" }),
+  ).toBeHidden();
+  await page.screenshot({ path: "test-results/ai-integration-compact.png" });
+  await page.getByRole("radio", { name: "手动确认", exact: true }).check();
+  await expect(card).toContainText("已接入，等待事件");
+  await page.evaluate(() => (window as any).featuresTest.codexEvent());
+  await expect(card).toContainText("已收到事件");
+  await card.getByRole("button", { name: "管理接入", exact: true }).click();
+  await card.getByRole("button", { name: "移除 Codex 接入" }).click();
+  await expect(card).toContainText("尚未连接 Codex");
+});
+
+test("fresh install opens setup and dismissal persists without enabling features", async ({
+  page,
+}) => {
+  await install(page);
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("fresh-setup-visited")) {
+      localStorage.removeItem("ahakey.studio.setup.v1");
+      sessionStorage.setItem("fresh-setup-visited", "true");
+    }
+  });
+  await page.goto("/");
+  await expect(page.getByRole("dialog")).toContainText("开始使用 AhaKey");
+  await page.screenshot({ path: "test-results/first-run-setup.png" });
+  await page.getByRole("button", { name: "连接 Codex" }).click();
+  await expect(page.getByRole("region", { name: "Codex 接入" })).toContainText(
+    "尚未连接 Codex",
+  );
+  expect(
+    await page.evaluate(() => (window as any).featuresTest.calls),
+  ).toHaveLength(0);
+  await page.getByRole("button", { name: "稍后设置" }).click();
+  await page.reload();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "新手引导" }).click();
+  await expect(page.getByRole("dialog")).toContainText("开始使用 AhaKey");
+});
+
+test("approval mode follows runtime state and saving a binding preserves a later disable", async ({
+  page,
+}) => {
+  await install(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "AI 编程联动", exact: true }).click();
+  const mode = page.getByRole("radiogroup", { name: "审批方式", exact: true });
+  await expect(
+    mode.getByRole("radio", { name: "关闭", exact: true }),
+  ).toBeChecked();
+  await mode.getByRole("radio", { name: "跟随拨杆", exact: true }).check();
+  expect(
+    await page.evaluate(() => (window as any).featuresTest.calls.at(-1)),
+  ).toMatchObject({
+    method: "hooks.configure",
+    params: { enabled: true, allowAutomatic: true, deviceId: "x1" },
+  });
+  await page.getByText("高级设置与记录", { exact: true }).click();
+  await page
+    .getByLabel("批准 / 拒绝按键来源", { exact: true })
+    .selectOption("hid-1");
+  await page.evaluate(() => (window as any).featuresTest.disableHooks());
+  await expect(
+    mode.getByRole("radio", { name: "关闭", exact: true }),
+  ).toBeChecked();
+  expect(
+    await page.evaluate(() => (window as any).featuresTest.calls),
+  ).toHaveLength(1);
+  await page.getByRole("button", { name: "保存设备设置" }).click();
+  expect(
+    await page.evaluate(() => (window as any).featuresTest.calls.at(-1)),
+  ).toMatchObject({
+    method: "hooks.configure",
+    params: { enabled: false, allowAutomatic: false, inputDeviceId: "hid-1" },
+  });
+  await mode.getByRole("radio", { name: "手动确认", exact: true }).check();
+  await mode.getByRole("radio", { name: "关闭", exact: true }).check();
+  expect(
+    await page.evaluate(() => (window as any).featuresTest.calls.at(-1)),
+  ).toMatchObject({
+    method: "hooks.configure",
+    params: { enabled: false, allowAutomatic: false, inputDeviceId: "hid-1" },
+  });
 });

@@ -1,4 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
+// Existing-user workspace fixture; first-install behavior is covered separately.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("ahakey.studio.setup.v1", "seen"),
+  );
+});
+
 async function install(
   page: Page,
   options: {

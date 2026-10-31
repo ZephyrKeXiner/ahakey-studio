@@ -9,6 +9,7 @@ fn main() {
             "runtime_voice",
             "runtime_hooks",
             "runtime_hook_config",
+            "codex_integration",
             "runtime_read_configuration",
             "runtime_keymap",
             "runtime_patch_configuration",

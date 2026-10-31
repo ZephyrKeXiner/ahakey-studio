@@ -104,6 +104,8 @@ pub struct ConfigurationProgress {
 pub struct InputDevice {
     pub input_device_id: String,
     pub name: String,
+    #[serde(default)]
+    pub stable_id: Option<String>,
 }
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -229,3 +229,17 @@ export function hookConfig(
   requireDesktop();
   return invoke("runtime_hook_config", { tool });
 }
+
+export interface CodexIntegrationStatus {
+  installed: boolean;
+  needsRepair: boolean;
+  configPath: string;
+  detected: boolean;
+  installedAtMs: number;
+}
+export function codexIntegration(
+  action: "status" | "install" | "remove",
+): Promise<CodexIntegrationStatus> {
+  requireDesktop();
+  return invoke("codex_integration", { action });
+}

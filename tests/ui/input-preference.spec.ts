@@ -1,4 +1,10 @@
 import { test, expect } from "@playwright/test";
+// Existing-user workspace fixture; first-install behavior is covered separately.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("ahakey.studio.setup.v1", "seen"),
+  );
+});
 
 test("saves the next-launch preference and applies it only after explicit stop and start", async ({
   page,

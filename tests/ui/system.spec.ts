@@ -1,4 +1,10 @@
 import { test, expect } from "@playwright/test";
+// Existing-user workspace fixture; first-install behavior is covered separately.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("ahakey.studio.setup.v1", "seen"),
+  );
+});
 
 test("permission changes come from Runtime, settings navigation never grants permission", async ({
   page,

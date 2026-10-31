@@ -26,6 +26,11 @@ import { KeymapPanel } from "./features/keymap/KeymapPanel";
 import { useWorkspace } from "./features/keymap/useWorkspace";
 import { VoicePanel, voiceStatus } from "./features/voice/VoicePanel";
 import { HooksPanel } from "./features/hooks/HooksPanel";
+import {
+  SetupGuide,
+  needsSetup,
+  rememberSetup,
+} from "./features/setup/SetupGuide";
 import "./App.css";
 
 type Sheet =
@@ -163,7 +168,9 @@ export default function App() {
   const [mode, setMode] = useState(0);
   const [selectedKey, setSelectedKey] = useState(0);
   const [selectedId, setSelectedId] = useState("");
-  const [sheet, setSheet] = useState<Sheet | null>(null);
+  const [sheet, setSheet] = useState<Sheet | null>(() =>
+    needsSetup() ? "welcome" : null,
+  );
   const [focusedOperation, setFocusedOperation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
@@ -240,7 +247,10 @@ export default function App() {
       <header className="studio-toolbar">
         <button
           className="studio-brand"
-          onClick={() => setSheet(null)}
+          onClick={() => {
+            if (sheet === "welcome") rememberSetup();
+            setSheet(null);
+          }}
           aria-label="AhaKey Studio 首页"
         >
           AhaKey Studio
@@ -503,10 +513,19 @@ export default function App() {
           key={sheet}
           title={sheetTitles[sheet]}
           className={`studio-sheet ${sheet === "help" ? "help-sheet" : ""}`}
-          onClose={() => setSheet(null)}
+          onClose={() => {
+            if (sheet === "welcome") rememberSetup();
+            setSheet(null);
+          }}
           actions={
-            <button className="secondary-button" onClick={() => setSheet(null)}>
-              完成
+            <button
+              className="secondary-button"
+              onClick={() => {
+                if (sheet === "welcome") rememberSetup();
+                setSheet(null);
+              }}
+            >
+              {sheet === "welcome" ? "关闭引导" : "完成"}
             </button>
           }
         >
@@ -524,36 +543,7 @@ export default function App() {
           ) : null}
           {sheet === "help" ? <HelpPanel /> : null}
           {sheet === "welcome" ? (
-            <div className="welcome-guide">
-              <StudioIcon name="keyboard" size={48} />
-              <h3>让键盘成为你的工作搭档。</h3>
-              <ol>
-                <li>
-                  <strong>连接键盘</strong>
-                  <p>打开键盘，在设备信息中查看 Runtime 和设备状态。</p>
-                </li>
-                <li>
-                  <strong>读取与编辑</strong>
-                  <p>从设备读取配置，确认同步到编辑区，再选择模式和按键。</p>
-                </li>
-                <li>
-                  <strong>确认并写入</strong>
-                  <p>核对变更后写入，在任务记录中查看进度。</p>
-                </li>
-              </ol>
-              <button
-                className="primary-button"
-                onClick={() => setSheet("device")}
-              >
-                查看设备连接
-              </button>
-              <button
-                className="text-button"
-                onClick={() => setSheet("system")}
-              >
-                检查系统权限
-              </button>
-            </div>
+            <SetupGuide runtime={runtime} onClose={() => setSheet(null)} />
           ) : null}
           {sheet === "voice" ? <VoicePanel key={runtime.generation} runtime={runtime}/> : null}
           {sheet === "firmware" ? (

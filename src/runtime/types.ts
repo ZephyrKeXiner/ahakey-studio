@@ -24,7 +24,7 @@ export interface Operation {
 export interface InputState {
   status: string;
   permission: string;
-  devices: { inputDeviceId: string; name: string }[];
+  devices: { inputDeviceId: string; name: string; stableId?: string | null }[];
 }
 export interface Inspection {
   protocol: { major: number; minor: number };
@@ -186,14 +186,38 @@ export interface VoiceView {
 }
 
 export interface HookPreferences {
-  enabled:boolean; deviceId:string|null; allowAutomatic:boolean; inputDeviceId:string|null; approveUsage:number|null; rejectUsage:number|null;
+  enabled: boolean;
+  deviceId: string | null;
+  allowAutomatic: boolean;
+  inputDeviceId: string | null;
+  approveUsage: number | null;
+  rejectUsage: number | null;
 }
 export interface HookApproval {
-  requestId:string; decision:string; expiresAtMs:number;
-  context:{ tool:string; sessionId:string; event:string; cwd:string; toolName:string; summary:string; };
+  requestId: string;
+  decision: string;
+  expiresAtMs: number;
+  context: {
+    tool: string;
+    sessionId: string;
+    event: string;
+    cwd: string;
+    toolName: string;
+    summary: string;
+  };
 }
 export interface HooksView {
-  revision:number; preferences:HookPreferences; approvals:HookApproval[];
-  sessions:{tool:string; sessionId:string; cwd:string; event:string; status:string; updatedAtMs:number}[];
-  selectedRequestId:string|null; learning:string|null;
+  revision: number;
+  preferences: HookPreferences;
+  approvals: HookApproval[];
+  sessions: {
+    tool: string;
+    sessionId: string;
+    cwd: string;
+    event: string;
+    status: string;
+    updatedAtMs: number;
+  }[];
+  selectedRequestId: string | null;
+  learning: string | null;
 }

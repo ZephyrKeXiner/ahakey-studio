@@ -29,6 +29,7 @@
     "allow-runtime-patch-configuration",
     "allow-runtime-voice",
     "allow-runtime-hooks",
-    "allow-runtime-hook-config"
+    "allow-runtime-hook-config",
+    "allow-codex-integration"
   ]
 }

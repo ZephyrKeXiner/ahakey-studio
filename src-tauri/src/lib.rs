@@ -1,3 +1,4 @@
+pub mod codex;
 pub mod resource_transfer;
 pub mod runtime_client;
 pub mod runtime_session;
@@ -102,6 +103,38 @@ async fn runtime_hook_config(tool: String, app: tauri::AppHandle) -> Result<Valu
     }
     serde_json::from_slice(&output.stdout)
         .map_err(|_| ClientError::new("HOOK_CONFIG_FAILED", "Hook 配置格式错误。"))
+}
+
+#[tauri::command]
+async fn codex_integration(
+    action: codex::Action,
+    app: tauri::AppHandle,
+) -> Result<codex::Status, ClientError> {
+    let home = std::env::var_os("CODEX_HOME")
+        .map(std::path::PathBuf::from)
+        .unwrap_or(
+            app.path()
+                .home_dir()
+                .map_err(|_| ClientError::new("CODEX_INTEGRATION_ERROR", "无法定位用户目录。"))?
+                .join(".codex"),
+        );
+    let integration = codex::Integration {
+        home,
+        directory: app
+            .path()
+            .app_data_dir()
+            .map_err(|_| ClientError::new("CODEX_INTEGRATION_ERROR", "无法定位应用数据目录。"))?
+            .join("integrations/codex"),
+        source: app
+            .path()
+            .resource_dir()
+            .map_err(|_| ClientError::new("CODEX_INTEGRATION_ERROR", "无法定位随包组件。"))?
+            .join("bin/ahakey-hook"),
+        discovery: runtime_client::default_discovery_path()?,
+    };
+    tauri::async_runtime::spawn_blocking(move || integration.run(action))
+        .await
+        .map_err(|_| ClientError::new("CODEX_INTEGRATION_ERROR", "接入操作未完成，请刷新状态。"))?
 }
 
 #[tauri::command]
@@ -306,6 +339,7 @@ pub fn run() {
             runtime_voice,
             runtime_hooks,
             runtime_hook_config,
+            codex_integration,
             runtime_read_configuration,
             runtime_keymap,
             runtime_patch_configuration,
