@@ -14,8 +14,12 @@ concurrency:
 
 jobs:
   metadata:
+    permissions:
+      contents: read
+      actions: read
     runs-on: ubuntu-24.04
     outputs:
+      ci_passed: ${{ steps.ci.outputs.passed }}
       version: ${{ steps.metadata.outputs.version }}
       runtime_repository: ${{ steps.metadata.outputs.runtime_repository }}
       runtime_revision: ${{ steps.metadata.outputs.runtime_revision }}
@@ -33,13 +37,23 @@ jobs:
           args=()
           if [[ "$REF_TYPE" == tag ]]; then args+=(--tag "$REF_NAME"); fi
           python3 scripts/release-metadata.py --github-output "${args[@]}"
+      - name: Reuse successful CI for this exact commit
+        id: ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          passed=$(gh api "repos/$REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$COMMIT&event=push&branch=main&status=success&per_page=1" --jq '.total_count > 0')
+          echo "passed=$passed" >> "$GITHUB_OUTPUT"
 
   checks:
     needs: metadata
+    if: needs.metadata.outputs.ci_passed != 'true'
     uses: ./.github/workflows/ci.yml
 
   package:
-    needs: [metadata, checks]
+    needs: metadata
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
@@ -76,6 +90,13 @@ jobs:
           python-version: '3.12'
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal && rustup default stable
+      - uses: Swatinem/rust-cache@e9d7b9f1e587218970671bac74e5511ed9506e6a # v2
+        with:
+          shared-key: studio-${{ runner.arch }}
+          workspaces: |
+            studio/src-tauri -> target
+            ahakey-runtime-rust -> target
+          save-if: ${{ github.event_name != 'pull_request' }}
       - run: npm ci && npm run build
       - run: mkdir -p src-tauri/resources/bin
       - name: Build pinned Runtime
@@ -110,8 +131,12 @@ jobs:
         run: python3 scripts/ci-keychain.py cleanup
 
   publish:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [metadata, package]
+    if: >-
+      !cancelled() && startsWith(github.ref, 'refs/tags/v') &&
+      needs.metadata.result == 'success' && needs.package.result == 'success' &&
+      (needs.checks.result == 'success' ||
+       (needs.checks.result == 'skipped' && needs.metadata.outputs.ci_passed == 'true'))
+    needs: [metadata, checks, package]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

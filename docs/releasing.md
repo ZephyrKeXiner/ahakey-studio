@@ -14,7 +14,9 @@ Runtime 的仓库和完整提交 SHA 保存在 [runtime-source.json](../runtime-
 
 ## CD
 
-[Studio Release](../.github/workflows/release.yml) 在推送 `v*` 标签时执行。先完成全部 CI，再构建两种架构的 DMG，签名、公证，并挂载安装包验证所有组件、架构、签名团队、公证票据和 Gatekeeper 检查。全部通过后上传到草稿 Release，最后公开发布。
+[Studio Release](../.github/workflows/release.yml) 在推送 `v*` 标签时执行。复用同一完整提交 SHA 在 main 上已通过的 CI；没有成功记录时补跑 CI。两种架构的打包与必要的 CI 并行进行，签名、公证后挂载 DMG 验证所有组件、架构、签名团队、公证票据和 Gatekeeper。发布仍须等待 CI 与打包全部通过，再上传草稿 Release 并公开。
+
+Rust 的依赖下载与 target 目录按工具链、架构、依赖锁文件缓存。debug 与 release 的编译产物不同；首次 release 构建仍需编译对应优化版本，缓存未命中不会跳过检查。
 
 手动运行工作流时：选择分支只构建并保存 Actions Artifacts；选择版本标签则发布该标签。不会移动标签或覆盖已有 Release。
 

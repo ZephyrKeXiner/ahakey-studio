@@ -79,6 +79,13 @@ jobs:
           python-version: '3.12'
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal --component rustfmt && rustup default stable
+      - uses: Swatinem/rust-cache@e9d7b9f1e587218970671bac74e5511ed9506e6a # v2
+        with:
+          shared-key: studio-${{ runner.arch }}
+          workspaces: |
+            studio/src-tauri -> target
+            ahakey-runtime-rust -> target
+          save-if: ${{ github.event_name != 'pull_request' }}
       - run: npm ci && npm run build
       - name: Prepare resource directory for native tests
         run: mkdir -p src-tauri/resources/bin
