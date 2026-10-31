@@ -17,13 +17,14 @@ def release_assets(directory, tag):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--tag', required=True)
+    parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1])
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
+    root = args.root.resolve()
     version = json.loads((root / 'package.json').read_text())['version']
     if args.tag != 'v' + version:
         raise ValueError('Release tag must match package version')
-    tag_commit = subprocess.check_output(['git', 'rev-parse', args.tag + '^{commit}'], text=True).strip()
-    if tag_commit != subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip():
+    tag_commit = subprocess.check_output(['git', 'rev-parse', args.tag + '^{commit}'], cwd=root, text=True).strip()
+    if tag_commit != subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip():
         raise ValueError('Release source must match checked-out tag')
     assets = release_assets(root / 'dist/release', args.tag)
     runtime = json.loads((root / 'runtime-source.json').read_text())

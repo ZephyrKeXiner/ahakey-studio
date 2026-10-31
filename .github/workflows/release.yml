@@ -4,6 +4,11 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Rebuild an existing tag with current packaging tools; leave empty for a preview'
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -19,6 +24,8 @@ jobs:
       actions: read
     runs-on: ubuntu-24.04
     outputs:
+      source_sha: ${{ steps.metadata.outputs.source_sha }}
+      release_tag: ${{ steps.metadata.outputs.release_tag }}
       ci_passed: ${{ steps.ci.outputs.passed }}
       version: ${{ steps.metadata.outputs.version }}
       runtime_repository: ${{ steps.metadata.outputs.runtime_repository }}
@@ -33,16 +40,26 @@ jobs:
         env:
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
+          MANUAL_RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
+          tag="$MANUAL_RELEASE_TAG"
+          if [[ -z "$tag" && "$REF_TYPE" == tag ]]; then tag="$REF_NAME"; fi
           args=()
-          if [[ "$REF_TYPE" == tag ]]; then args+=(--tag "$REF_NAME"); fi
-          python3 scripts/release-metadata.py --github-output "${args[@]}"
+          commit=$(git rev-parse HEAD)
+          if [[ -n "$tag" ]]; then
+            commit=$(git rev-parse --verify "refs/tags/$tag^{commit}")
+            args+=(--tag "$tag")
+          fi
+          git worktree add --detach "$RUNNER_TEMP/release-source" "$commit"
+          python3 scripts/release-metadata.py --root "$RUNNER_TEMP/release-source" --github-output "${args[@]}"
+          echo "source_sha=$commit" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$tag" >> "$GITHUB_OUTPUT"
       - name: Reuse successful CI for this exact commit
         id: ci
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          COMMIT: ${{ github.sha }}
+          COMMIT: ${{ steps.metadata.outputs.source_sha }}
         run: |
           passed=$(gh api "repos/$REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$COMMIT&event=push&branch=main&status=success&per_page=1" --jq '.total_count > 0')
           echo "passed=$passed" >> "$GITHUB_OUTPUT"
@@ -51,6 +68,8 @@ jobs:
     needs: metadata
     if: needs.metadata.outputs.ci_passed != 'true'
     uses: ./.github/workflows/ci.yml
+    with:
+      source_ref: ${{ needs.metadata.outputs.source_sha }}
 
   package:
     needs: metadata
@@ -72,7 +91,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          path: build-tools
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
           path: studio
+          ref: ${{ needs.metadata.outputs.source_sha }}
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -108,7 +132,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: python3 scripts/ci-keychain.py
+        run: python3 ../build-tools/scripts/ci-keychain.py
       - name: Build, sign and notarize complete application
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -119,20 +143,28 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
           RELEASE_ARCH: ${{ matrix.architecture }}
-        run: python3 scripts/verify-release.py --version "$RELEASE_VERSION" --architecture "$RELEASE_ARCH"
+        run: python3 ../build-tools/scripts/verify-release.py --root "$PWD" --version "$RELEASE_VERSION" --architecture "$RELEASE_ARCH"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: studio-macos-${{ matrix.architecture }}
           path: studio/dist/release/*.dmg
           if-no-files-found: error
           retention-days: 14
+      - name: Preserve installer for failure diagnosis
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: unverified-macos-${{ matrix.architecture }}
+          path: studio/src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Remove signing material
         if: always()
-        run: python3 scripts/ci-keychain.py cleanup
+        run: python3 ../build-tools/scripts/ci-keychain.py cleanup
 
   publish:
     if: >-
-      !cancelled() && startsWith(github.ref, 'refs/tags/v') &&
+      !cancelled() && needs.metadata.outputs.release_tag != '' &&
       needs.metadata.result == 'success' && needs.package.result == 'success' &&
       (needs.checks.result == 'success' ||
        (needs.checks.result == 'skipped' && needs.metadata.outputs.ci_passed == 'true'))
@@ -144,6 +176,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+          ref: ${{ needs.metadata.outputs.source_sha }}
+          fetch-depth: 0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: build-tools
+          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           pattern: studio-macos-*
@@ -153,5 +191,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: python3 scripts/publish-release.py --tag "$RELEASE_TAG"
+          RELEASE_TAG: ${{ needs.metadata.outputs.release_tag }}
+        run: python3 build-tools/scripts/publish-release.py --root "$PWD" --tag "$RELEASE_TAG"

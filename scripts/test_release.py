@@ -4,6 +4,8 @@ from pathlib import Path
 import shutil
 import tempfile
 import unittest
+import subprocess
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -56,6 +58,28 @@ class ReleaseTests(unittest.TestCase):
                 assets(directory, 'v0.1.0')
             intel.write_bytes(b'dmg')
             self.assertEqual(assets(directory, 'v0.1.0'), [arm, intel])
+
+
+class TicketValidationTests(unittest.TestCase):
+    def test_transient_ticket_service_failure_is_retried(self):
+        verify = module('verify-release')
+        with patch.object(verify, 'run', side_effect=[subprocess.CalledProcessError(68, 'stapler'), b'valid']) as run, patch.object(verify.time, 'sleep'):
+            verify.validate_ticket(Path('/installed/Studio.app'))
+            self.assertEqual(run.call_count, 2)
+
+    def test_invalid_ticket_fails_without_retry(self):
+        verify = module('verify-release')
+        with patch.object(verify, 'run', side_effect=subprocess.CalledProcessError(65, 'stapler')) as run, patch.object(verify.time, 'sleep'):
+            with self.assertRaises(subprocess.CalledProcessError):
+                verify.validate_ticket(Path('/installed/Studio.app'))
+            self.assertEqual(run.call_count, 1)
+
+    def test_persistent_service_failure_still_blocks_release(self):
+        verify = module('verify-release')
+        with patch.object(verify, 'run', side_effect=subprocess.CalledProcessError(68, 'stapler')) as run, patch.object(verify.time, 'sleep'):
+            with self.assertRaises(subprocess.CalledProcessError):
+                verify.validate_ticket(Path('/installed/Studio.app'))
+            self.assertEqual(run.call_count, 3)
 
 
 if __name__ == '__main__':

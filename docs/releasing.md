@@ -18,7 +18,9 @@ Runtime 的仓库和完整提交 SHA 保存在 [runtime-source.json](../runtime-
 
 Rust 的依赖下载与 target 目录按工具链、架构、依赖锁文件缓存。debug 与 release 的编译产物不同；首次 release 构建仍需编译对应优化版本，缓存未命中不会跳过检查。
 
-手动运行工作流时：选择分支只构建并保存 Actions Artifacts；选择版本标签则发布该标签。不会移动标签或覆盖已有 Release。
+手动运行工作流时：`release_tag` 留空且选择分支只构建预览包；选择版本标签或填写 `release_tag` 则发布该标签。重新打包时使用所选工作流版本的验证与发布脚本，应用与 Runtime 仍从原标签指定的提交构建，不移动标签或覆盖已有 Release。
+
+验证时先用 `ditto` 将应用从只读 DMG 复制到可写目录，保留扩展属性和公证票据，模拟实际安装。Apple 票据服务的临时响应错误最多重试三次，签名无效、票据无效或撤销均阻止发布。若失败时已有 DMG，将在 Actions 保留三天诊断产物，不作为正式 Release 下载。
 
 仓库 Actions Secrets：
 
