@@ -25,7 +25,9 @@ npm run tauri dev
 - 任务恢复：提交前持久保存原任务 ID、请求及素材引用；重连和重新打开后查询原任务。连接失败不会自动重发设备写入。
 - 本地草稿和任务记录保存在桌面 WebView 的 localStorage。OLED 已准备素材保存在 Runtime 资源目录；重开 Studio 可继续使用素材引用，本地原图预览需重新选择文件。
 
-macOS 已接入会话级后台管理：打开 Studio 时附着已有 Runtime，未运行时启动随包提供的 Runtime。退出 Studio 后继续运行；界面主动关闭时先持久保存停止意图，再结束 Runtime，当前 Studio 不自动重启它。下次打开 Studio 可重新启动。
+macOS 已接入会话级后台管理：打开 Studio 时附着已有 Runtime，未运行时启动随包提供的 Runtime。退出 Studio 后 Runtime 继续运行；在“系统与权限”中主动停止后台时，先持久保存停止意图，再结束 Runtime，当前 Studio 不自动重启它。下次打开 Studio 可重新启动。
+
+Studio 启动后常驻菜单栏。关闭主窗口只隐藏窗口，保留当前页面和草稿；从菜单栏选择“打开 AhaKey Studio”或点击 Dock 图标可恢复窗口。“退出 AhaKey Studio”或 Command-Q 退出 Studio，Runtime 继续运行。本功能不添加开机自启。
 
 后台使用当前 GUI 会话的 launchd job 与独立 supervisor。Runtime 异常退出后以 1、2、4 秒退避，最多自动重启三次；预算用尽后需手动恢复。预算属于本次开机，重启后不会沿用旧故障预算。plist 放在应用数据目录的 `runtime-session` 中，不安装到 `~/Library/LaunchAgents`，电脑重启后不会因登录扫描而自启。
 

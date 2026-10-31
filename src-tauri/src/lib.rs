@@ -5,6 +5,8 @@ pub mod runtime_session;
 pub mod service;
 pub mod supervisor;
 pub mod system;
+#[cfg(desktop)]
+mod tray;
 
 use runtime_client::{ClientError, Inspection};
 use runtime_session::{ClientView, KeymapRequest, OledRequest, RuntimeSession};
@@ -297,6 +299,8 @@ async fn system_open_settings(pane: system::SettingsPane) -> Result<(), ClientEr
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
+            #[cfg(desktop)]
+            tray::install(app.handle())?;
             let path = runtime_client::default_discovery_path()
                 .map_err(|error| std::io::Error::other(error.message))?;
             let (client, driver) = RuntimeSession::new(path.clone());
@@ -330,6 +334,17 @@ pub fn run() {
             });
             Ok(())
         })
+        .on_window_event(|window, event| {
+            #[cfg(desktop)]
+            if window.label() == "main"
+                && let tauri::WindowEvent::CloseRequested { api, .. } = event
+            {
+                api.prevent_close();
+                if let Err(error) = window.hide() {
+                    eprintln!("Cannot hide AhaKey Studio: {error}");
+                }
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             runtime_snapshot,
             runtime_watch,
@@ -356,6 +371,14 @@ pub fn run() {
             runtime_input_settings,
             runtime_set_input_monitor
         ])
-        .run(tauri::generate_context!())
-        .expect("failed to run AhaKey Studio");
+        .build(tauri::generate_context!())
+        .expect("failed to build AhaKey Studio")
+        .run(|app, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = event
+                && let Err(error) = tray::show_main(app)
+            {
+                eprintln!("Cannot reopen AhaKey Studio: {error}");
+            }
+        });
 }
