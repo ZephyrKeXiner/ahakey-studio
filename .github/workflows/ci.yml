@@ -1,0 +1,91 @@
+name: Studio CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      runtime_repository: ${{ steps.metadata.outputs.runtime_repository }}
+      runtime_revision: ${{ steps.metadata.outputs.runtime_revision }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - id: metadata
+        run: python3 scripts/release-metadata.py --github-output
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:ui
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: failure()
+        with:
+          name: ui-failure-results
+          path: test-results/
+          retention-days: 7
+
+  native:
+    needs: frontend
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '13.0'
+    defaults:
+      run:
+        working-directory: studio
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: studio
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ${{ needs.frontend.outputs.runtime_repository }}
+          ref: ${{ needs.frontend.outputs.runtime_revision }}
+          path: ahakey-runtime-rust
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: studio/package-lock.json
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --component rustfmt && rustup default stable
+      - run: npm ci && npm run build
+      - name: Prepare resource directory for native tests
+        run: mkdir -p src-tauri/resources/bin
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+      - name: Build matching Runtime and test integration
+        run: |
+          cargo build --locked --bins --manifest-path ../ahakey-runtime-rust/Cargo.toml
+          cargo test --locked --manifest-path ../ahakey-runtime-rust/Cargo.toml
+          npm run test:runtime
