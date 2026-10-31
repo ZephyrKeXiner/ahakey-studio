@@ -337,11 +337,13 @@ pub fn run() {
         .on_window_event(|window, event| {
             #[cfg(desktop)]
             if window.label() == "main"
-                && let tauri::WindowEvent::CloseRequested { api, .. } = event
+                && let tauri::WindowEvent::Destroyed = event
             {
-                api.prevent_close();
-                if let Err(error) = window.hide() {
-                    eprintln!("Cannot hide AhaKey Studio: {error}");
+                // Webview teardown does not run React cleanup. Drop its IPC observers here.
+                if let Some(bridge) = window.app_handle().try_state::<RuntimeBridge>() {
+                    for (_, listener) in bridge.listeners.lock().unwrap().drain() {
+                        listener.abort();
+                    }
                 }
             }
         })
@@ -374,6 +376,14 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("failed to build AhaKey Studio")
         .run(|app, event| {
+            #[cfg(desktop)]
+            if let tauri::RunEvent::ExitRequested {
+                code: None, api, ..
+            } = &event
+            {
+                // Closing the last window keeps the tray alive. Explicit quit uses exit(0).
+                api.prevent_exit();
+            }
             #[cfg(target_os = "macos")]
             if let tauri::RunEvent::Reopen { .. } = event
                 && let Err(error) = tray::show_main(app)

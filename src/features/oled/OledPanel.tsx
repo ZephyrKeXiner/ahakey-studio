@@ -253,7 +253,10 @@ export function OledPanel({
     }
   }
   return (
-    <section className="oled-panel">
+    <section
+      className="oled-panel"
+      data-retain-webview={preparing || !!composer}
+    >
       <div className="page-heading">
         <div>
           <h1>屏幕画面</h1>

@@ -6,11 +6,22 @@ use tauri::{
 };
 
 pub fn show_main(app: &AppHandle) -> tauri::Result<()> {
-    if let Some(window) = app.get_webview_window("main") {
-        window.unminimize()?;
-        window.show()?;
-        window.set_focus()?;
-    }
+    let window = match app.get_webview_window("main") {
+        Some(window) => window,
+        None => {
+            let config = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|w| w.label == "main")
+                .ok_or(tauri::Error::WindowNotFound)?;
+            tauri::WebviewWindowBuilder::from_config(app, config)?.build()?
+        }
+    };
+    window.unminimize()?;
+    window.show()?;
+    window.set_focus()?;
     Ok(())
 }
 

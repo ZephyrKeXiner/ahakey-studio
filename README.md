@@ -27,7 +27,9 @@ npm run tauri dev
 
 macOS 已接入会话级后台管理：打开 Studio 时附着已有 Runtime，未运行时启动随包提供的 Runtime。退出 Studio 后 Runtime 继续运行；在“系统与权限”中主动停止后台时，先持久保存停止意图，再结束 Runtime，当前 Studio 不自动重启它。下次打开 Studio 可重新启动。
 
-Studio 启动后常驻菜单栏。关闭主窗口只隐藏窗口，保留当前页面和草稿；从菜单栏选择“打开 AhaKey Studio”或点击 Dock 图标可恢复窗口。“退出 AhaKey Studio”或 Command-Q 退出 Studio，Runtime 继续运行。本功能不添加开机自启。
+Studio 启动后常驻菜单栏。关闭主窗口会销毁 WebView 并释放页面内存；从菜单栏选择“打开 AhaKey Studio”或点击 Dock 图标会重新创建窗口，恢复持久化草稿和 Runtime 任务。正在裁剪/准备图片或有未保存的语音设置时，关闭会暂时隐藏窗口以保留编辑，完成后再次关闭即可释放。“退出 AhaKey Studio”或 Command-Q 退出 Studio，Runtime 继续运行。本功能不添加开机自启。
+
+2026-10-31 本机测量：同一次 Studio 运行中，主进程与关联 WebKit 进程的 `phys_footprint` 合计从开窗约 104 MB 降到关窗约 59 MB，减少约 45 MB；WebContent 进程退出，GPU/Networking 缓存仍可能驻留。后台 Runtime、语音、输入监听 PID 不变。此数值不含独立后台，且随页面内容和系统缓存变化。
 
 后台使用当前 GUI 会话的 launchd job 与独立 supervisor。Runtime 异常退出后以 1、2、4 秒退避，最多自动重启三次；预算用尽后需手动恢复。预算属于本次开机，重启后不会沿用旧故障预算。plist 放在应用数据目录的 `runtime-session` 中，不安装到 `~/Library/LaunchAgents`，电脑重启后不会因登录扫描而自启。
 

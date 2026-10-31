@@ -1,3 +1,4 @@
+import { installWindowLifecycle } from "./support/window-fixture";
 import { auditLayout } from "./support/visual-audit";
 import { test, expect, type Page } from "@playwright/test";
 // Existing-user workspace fixture; first-install behavior is covered separately.
@@ -150,10 +151,13 @@ async function install(page: Page) {
       },
     };
     w.isTauri = true;
+    w.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener: () => {} };
     w.__TAURI_INTERNALS__ = {
+      metadata: { currentWindow: { label: "main" } },
       transformCallback: () => 1,
       unregisterCallback: () => {},
       invoke: async (command: string, args: any) => {
+        if (command.startsWith("plugin:event|")) return 0;
         if (command === "runtime_watch") {
           listeners.set(args.listenerId, args.channel);
           publish();
@@ -461,4 +465,30 @@ test("voice, approvals, and setup remain readable through their full scroll area
   expect(
     await page.evaluate(() => (window as any).featuresTest.calls),
   ).toHaveLength(0);
+});
+
+test("unsaved voice preferences retain the window until saved", async ({
+  page,
+}) => {
+  await install(page);
+  await installWindowLifecycle(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: /^语音输入/ }).click();
+  const checkbox = page.getByRole("checkbox", { name: "启用 Voice 键" });
+  await checkbox.check();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).windowTest.listeners()))
+    .toBe(1);
+  await page.evaluate(() => (window as any).windowTest.close());
+  expect(await page.evaluate(() => (window as any).windowTest.calls)).toEqual([
+    "plugin:window|hide",
+  ]);
+  await expect(checkbox).toBeChecked();
+  await page.getByRole("button", { name: "保存录音设置", exact: true }).click();
+  await expect(page.locator('[data-retain-webview="true"]')).toHaveCount(0);
+  await page.evaluate(() => (window as any).windowTest.close());
+  expect(await page.evaluate(() => (window as any).windowTest.calls)).toEqual([
+    "plugin:window|hide",
+    "plugin:window|destroy",
+  ]);
 });

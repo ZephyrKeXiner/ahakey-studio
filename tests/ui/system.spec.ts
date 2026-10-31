@@ -45,10 +45,13 @@ test("permission changes come from Runtime, settings navigation never grants per
     };
     let callback = 0;
     w.isTauri = true;
+    w.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener: () => {} };
     w.__TAURI_INTERNALS__ = {
+      metadata: { currentWindow: { label: "main" } },
       transformCallback: () => ++callback,
       unregisterCallback: () => {},
       invoke: async (command: string, args: any) => {
+        if (command.startsWith("plugin:event|")) return 0;
         if (command === "runtime_input_settings")
           return {
             enabled: false,

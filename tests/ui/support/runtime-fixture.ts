@@ -24,6 +24,7 @@ export async function installRuntime(
       const w = window as unknown as {
         isTauri: boolean;
         __TAURI_INTERNALS__: unknown;
+        __TAURI_EVENT_PLUGIN_INTERNALS__: unknown;
         studioTest: Harness;
       };
       const saved = sessionStorage.getItem("runtime-fixture");
@@ -117,10 +118,13 @@ export async function installRuntime(
       }
       let callback = 0;
       w.isTauri = true;
+      w.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener: () => {} };
       w.__TAURI_INTERNALS__ = {
+        metadata: { currentWindow: { label: "main" } },
         transformCallback: () => ++callback,
         unregisterCallback: () => {},
         invoke: async (command: string, args: any) => {
+          if (command.startsWith("plugin:event|")) return 0;
           if (command === "runtime_input_settings")
             return {
               enabled: false,

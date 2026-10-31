@@ -46,10 +46,13 @@ test("saves the next-launch preference and applies it only after explicit stop a
         channel.onmessage(structuredClone(view));
     }
     w.isTauri = true;
+    w.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener: () => {} };
     w.__TAURI_INTERNALS__ = {
+      metadata: { currentWindow: { label: "main" } },
       transformCallback: () => ++callback,
       unregisterCallback: () => {},
       invoke: async (command: string, args: any) => {
+        if (command.startsWith("plugin:event|")) return 0;
         if (command === "runtime_watch") {
           listeners.set(args.listenerId, args.channel);
           publish();

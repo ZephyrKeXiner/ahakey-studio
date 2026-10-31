@@ -31,6 +31,7 @@ import {
   needsSetup,
   rememberSetup,
 } from "./features/setup/SetupGuide";
+import { watchWindowClose } from "./runtime/window";
 import "./App.css";
 
 type Sheet =
@@ -178,6 +179,7 @@ export default function App() {
   const [reconnecting, setReconnecting] = useState(false);
   const menu = useRef<HTMLDetailsElement>(null);
   useEffect(() => watchRuntime(setRuntime), []);
+  useEffect(watchWindowClose, []);
   useEffect(() => {
     function dismiss(event: PointerEvent) {
       if (menu.current && !menu.current.contains(event.target as Node))

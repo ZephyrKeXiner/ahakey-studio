@@ -1,3 +1,4 @@
+import { installWindowLifecycle } from "./support/window-fixture";
 import { auditLayout } from "./support/visual-audit";
 import { test, expect } from "@playwright/test";
 // Existing-user workspace fixture; first-install behavior is covered separately.
@@ -76,10 +77,13 @@ test.beforeEach(async ({ page }) => {
     w.isTauri = true;
     w.oledTest = state;
     w.preparedImages = [];
+    w.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener: () => {} };
     w.__TAURI_INTERNALS__ = {
+      metadata: { currentWindow: { label: "main" } },
       transformCallback: () => ++callback,
       unregisterCallback: () => {},
       invoke: async (command: string, args: any) => {
+        if (command.startsWith("plugin:event|")) return 0;
         if (command === "runtime_service_status")
           return {
             phase: "external",
@@ -170,6 +174,7 @@ test.beforeEach(async ({ page }) => {
 test("prepares locally, confirms one target, and resumes the same task after reload", async ({
   page,
 }) => {
+  await installWindowLifecycle(page);
   await page.goto("/");
   await page.getByRole("button", { name: "屏幕画面", exact: true }).click();
   await page
@@ -206,6 +211,11 @@ test("prepares locally, confirms one target, and resumes the same task after rel
   await expect(
     page.getByRole("button", { name: "继续上传", exact: true }),
   ).toBeEnabled();
+  await expect(page.locator('[data-retain-webview="true"]')).toHaveCount(0);
+  await page.evaluate(() => (window as any).windowTest.close());
+  expect(await page.evaluate(() => (window as any).windowTest.calls)).toEqual([
+    "plugin:window|destroy",
+  ]);
   await page.reload();
   await page.getByRole("button", { name: /^任务记录/ }).click();
   await page.getByRole("button", { name: "继续上传", exact: true }).click();
@@ -227,6 +237,7 @@ test("prepares locally, confirms one target, and resumes the same task after rel
 test("crops a static image only after confirmation, without writing the device", async ({
   page,
 }) => {
+  await installWindowLifecycle(page);
   await page.goto("/");
   await page.getByRole("button", { name: "屏幕画面", exact: true }).click();
   const png = await page.evaluate(() => {
@@ -254,6 +265,19 @@ test("crops a static image only after confirmation, without writing the device",
   await page.getByLabel("选择图片或动图").setInputFiles(file);
   await page.getByRole("slider", { name: "缩放", exact: true }).fill("2");
   await page.getByRole("slider", { name: "垂直位置", exact: true }).fill("0.8");
+  await expect
+    .poll(() => page.evaluate(() => (window as any).windowTest.listeners()))
+    .toBe(1);
+  await page.evaluate(() => (window as any).windowTest.close());
+  expect(await page.evaluate(() => (window as any).windowTest.calls)).toEqual([
+    "plugin:window|hide",
+  ]);
+  await expect(
+    page.getByRole("slider", { name: "缩放", exact: true }),
+  ).toHaveValue("2");
+  await expect(
+    page.getByRole("slider", { name: "垂直位置", exact: true }),
+  ).toHaveValue("0.8");
   await auditLayout(page, "crop");
   await page.getByRole("button", { name: "使用此画面", exact: true }).click();
   await expect(
@@ -275,6 +299,7 @@ test("crops a static image only after confirmation, without writing the device",
 test("canvas mode selects the matching OLED target without submitting on navigation", async ({
   page,
 }) => {
+  await installWindowLifecycle(page);
   await page.goto("/");
   await page.getByRole("tab", { name: "Codex", exact: true }).click();
   await page.getByRole("button", { name: "LCD 屏幕", exact: true }).click();

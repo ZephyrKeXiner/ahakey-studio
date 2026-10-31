@@ -100,7 +100,16 @@ export function VoicePanel({ runtime }: { runtime: ClientView }) {
   const control = (action: string) =>
     run("voice.control", { action, sessionId: view?.sessionId ?? null });
   return (
-    <section className="voice-panel">
+    <section
+      className="voice-panel"
+      data-retain-webview={
+        busy ||
+        (!!view &&
+          (Object.keys(draft) as (keyof VoicePreferences)[]).some(
+            (key) => draft[key] !== view.preferences[key],
+          ))
+      }
+    >
       {!supported ? (
         <p className="inline-notice">请连接支持语音输入的新版 Runtime。</p>
       ) : null}

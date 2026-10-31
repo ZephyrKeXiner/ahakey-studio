@@ -22,10 +22,13 @@ test("closing the managed Runtime requires confirmation and does not automatical
     };
     w.serviceTest = { starts: 0, stops: 0 };
     let callback = 0;
+    w.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener: () => {} };
     w.__TAURI_INTERNALS__ = {
+      metadata: { currentWindow: { label: "main" } },
       transformCallback: () => ++callback,
       unregisterCallback: () => {},
       invoke: async (command: string, args: any) => {
+        if (command.startsWith("plugin:event|")) return 0;
         if (command === "runtime_watch") {
           args.channel.onmessage({
             status: "connected",
