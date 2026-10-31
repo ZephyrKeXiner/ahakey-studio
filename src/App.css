@@ -2,7 +2,6 @@
   color-scheme: light;
   --ink: #252629;
   --muted: #686b73;
-  --border: #e4e4e7;
   --line: #e4e4e7;
   --accent: #087ffc;
   --surface: #f6f6f8;
@@ -44,9 +43,12 @@ button:focus-visible,
 a:focus-visible,
 summary:focus-visible,
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+textarea:focus-visible,
+.file-picker:focus-within {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  /* Keep the focus ring inside controls at scroll-container edges. */
+  outline-offset: -3px;
 }
 a {
   color: var(--accent);
@@ -79,7 +81,6 @@ summary {
   display: flex;
   align-items: center;
   gap: 25px;
-  border-bottom: 0.5px solid var(--border);
   background: #fff;
   flex-shrink: 0;
 }
@@ -243,7 +244,6 @@ summary {
 }
 .menu-popover hr {
   border: 0;
-  border-top: 0.5px solid var(--border);
   margin: 5px 8px;
 }
 .studio-workspace {
@@ -570,7 +570,6 @@ summary {
   flex-shrink: 0;
 }
 .studio-inspector {
-  border-left: 0.5px solid var(--border);
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -583,7 +582,6 @@ summary {
   gap: 12px;
   padding: 24px 24px 19px;
   flex-shrink: 0;
-  border-bottom: 0.5px solid #f0f0f2;
 }
 .inspector-title h2 {
   font-size: 20px;
@@ -634,7 +632,6 @@ summary {
   display: flex;
   align-items: center;
   gap: 17px;
-  border-top: 0.5px solid var(--border);
   min-height: 43px;
   padding: 8px 24px;
   font-size: 12px;
@@ -645,10 +642,6 @@ summary {
   display: flex;
   align-items: center;
   gap: 7px;
-}
-.selection-status + span {
-  border-left: 0.5px solid var(--border);
-  padding-left: 17px;
 }
 .unsaved-status {
   color: #a66e16;
@@ -695,6 +688,9 @@ summary {
 }
 .primary-button:hover:not(:disabled) {
   background: #006de0;
+}
+.primary-button:focus-visible {
+  outline-color: white;
 }
 .secondary-button {
   background: #ededf0;
@@ -768,7 +764,6 @@ summary {
   margin: 0 -22px -24px;
   padding: 13px 22px;
   background: #fff;
-  border-top: 0.5px solid var(--border);
   justify-content: flex-end;
   z-index: 1;
 }
@@ -1024,7 +1019,6 @@ input[type="text"] {
   margin: 0 -22px -24px;
   padding: 13px 22px;
   background: #fff;
-  border-top: 0.5px solid var(--border);
   justify-content: flex-end;
   z-index: 1;
 }
@@ -1087,10 +1081,6 @@ input[type="text"] {
   width: 100%;
   cursor: pointer;
 }
-.file-picker:focus-within {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
 .file-picker.disabled {
   opacity: 0.5;
 }
@@ -1106,7 +1096,6 @@ input[type="text"] {
   justify-content: space-between;
   gap: 15px;
   padding: 11px 0;
-  border-bottom: 0.5px solid #e7e7ec;
 }
 .oled-facts dt,
 .device-details dt {
@@ -1219,7 +1208,6 @@ input[type="text"] {
   list-style: none;
   margin: 20px 0;
   padding: 0;
-  border-top: 0.5px solid var(--border);
 }
 .patch-list li {
   display: grid;
@@ -1227,7 +1215,6 @@ input[type="text"] {
   gap: 8px;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 0.5px solid var(--border);
   overflow-wrap: anywhere;
   font-size: 12px;
 }
@@ -1242,7 +1229,6 @@ input[type="text"] {
 }
 .operation-row {
   padding: 16px 0;
-  border-bottom: 0.5px solid var(--border);
 }
 .operation-heading {
   display: flex;
@@ -1348,7 +1334,6 @@ input[type="text"] {
   min-height: 340px;
 }
 .help-topics {
-  border-right: 0.5px solid var(--border);
   padding-right: 14px;
 }
 .help-topics button {
@@ -1615,10 +1600,6 @@ input[type="text"] {
     flex: none;
     min-height: 0;
   }
-  .studio-inspector {
-    border-left: 0;
-    border-top: 0.5px solid var(--border);
-  }
   .inspector-scroll {
     overflow: visible;
     padding-bottom: 24px;
@@ -1711,14 +1692,6 @@ input[type="text"] {
   background: var(--surface);
 }
 
-.hook-summary {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  max-height: 180px;
-  overflow: auto;
-  font-size: 12px;
-}
-
 .setup-steps {
   display: flex;
   flex-wrap: wrap;
@@ -1743,56 +1716,6 @@ input[type="text"] {
   border-color: var(--accent);
 }
 
-.hooks-panel .system-card {
-  margin: 0;
-}
-.hooks-panel .section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.hooks-panel h3 {
-  margin: 0 0 8px;
-  font-size: 16px;
-}
-.hooks-mode select {
-  margin-top: 4px;
-}
-.hooks-panel .field-hint {
-  margin: 8px 0 0;
-}
-.hooks-empty {
-  margin: 0;
-  color: var(--muted);
-}
-.hooks-pending {
-  display: grid;
-  gap: 8px;
-}
-.hooks-advanced {
-  padding-top: 8px;
-}
-.hooks-advanced > summary {
-  cursor: pointer;
-  color: var(--muted, #6e6e78);
-  font-size: 13px;
-  padding: 4px 0;
-}
-.hooks-advanced-content {
-  display: grid;
-  gap: 20px;
-  margin-top: 16px;
-}
-.hooks-advanced-content h4 {
-  margin: 0 0 10px;
-}
-.hooks-panel .voice-actions .primary-button {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
-
 /* Controls share one type scale; select menus retain native keyboard behavior. */
 select {
   appearance: none;
@@ -1806,10 +1729,6 @@ textarea {
   border: 0.5px solid #bfc2c8;
   border-radius: 6px;
   resize: vertical;
-}
-textarea:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 small,
 legend {
@@ -1831,36 +1750,6 @@ code {
 }
 button:not(:disabled):hover {
   filter: brightness(0.96);
-}
-.toolbar-button {
-  border: 0;
-  border-radius: 6px;
-  padding: 7px 10px;
-  background: var(--surface);
-}
-.hooks-panel {
-  gap: 24px;
-}
-.hooks-panel .system-card h3 {
-  margin-top: 0;
-}
-.hooks-mode .section-heading {
-  margin-bottom: 12px;
-}
-.hooks-mode .approval-options {
-  padding: 4px;
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.hooks-mode .approval-options label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.hooks-mode .approval-options input {
-  margin: 0;
-  accent-color: var(--accent);
 }
 .permission-list {
   display: flex;
