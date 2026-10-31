@@ -69,16 +69,10 @@ export function InputSettings() {
       {!settings ? (
         <p>{error ? "设置暂不可用" : "正在读取后台设置…"}</p>
       ) : !settings.editable ? (
-        <p>
-          当前是独立启动的
-          Runtime，请在它的启动来源设置。这里仍会显示它上报的权限状态。
-        </p>
+        <p>当前后台独立运行，请在启动来源更改设置。</p>
       ) : (
         <>
-          <p>
-            设置在下次启动后台时生效。开启后由 Runtime
-            启动原生输入组件，首次使用时 macOS 可能请求输入监控权限。
-          </p>
+          <p>下次启动后台时生效，需要 macOS 输入监控权限。</p>
           {!settings.available ? (
             <p className="inline-error">
               缺少配套输入组件，请准备原生组件或安装完整应用。

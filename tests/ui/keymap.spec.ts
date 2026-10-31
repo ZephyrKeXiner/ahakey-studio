@@ -1,3 +1,4 @@
+import { auditLayout } from "./support/visual-audit";
 import { test, expect, type Page } from "@playwright/test";
 // Existing-user workspace fixture; first-install behavior is covered separately.
 test.beforeEach(async ({ page }) => {
@@ -34,11 +35,11 @@ test("read keys appear immediately and refresh preserves unsaved edits", async (
     page.getByRole("button", { name: "同步到编辑区", exact: true }),
   ).toHaveCount(0);
   await page
-    .getByRole("button", { name: "Key 2 · 批准键", exact: true })
+    .getByRole("button", { name: "Key 2，批准键", exact: true })
     .click();
   await expect(page.getByLabel("动作类型")).toHaveValue("unknown");
   await page
-    .getByRole("button", { name: "Key 1 · Voice 键", exact: true })
+    .getByRole("button", { name: "Key 1，Voice 键", exact: true })
     .click();
   await key.selectOption("5");
   await page.getByRole("button", { name: "刷新已知键位", exact: true }).click();
@@ -66,6 +67,7 @@ test("one-key write preserves newer edits and recovers the original task after r
   await page.getByRole("button", { name: "写入修改，1", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("写入模式 1 的 1 个键位？");
+  await auditLayout(page, "confirm-keymap");
   await dialog.getByRole("button", { name: "确认写入", exact: true }).click();
   await expect(page.getByText(/写入任务处理中或等待确认/)).toBeVisible();
   await key.selectOption("6");
@@ -83,6 +85,7 @@ test("one-key write preserves newer edits and recovers the original task after r
   expect(requests[0].keys).toEqual([
     { index: 0, action: { type: "shortcut", modifiers: [], keyCode: 5 } },
   ]);
+  await auditLayout(page, "keymap-populated");
 });
 
 test("disconnect preserves local editing and disables submission", async ({
@@ -131,7 +134,7 @@ test("hardware read updates clean keys automatically and preserves edits made du
   ).toBeEnabled();
   await expect(key).toHaveValue("5");
   await page
-    .getByRole("button", { name: "Key 2 · 批准键", exact: true })
+    .getByRole("button", { name: "Key 2，批准键", exact: true })
     .click();
   await expect(key).toHaveValue("7");
   await expect(page.locator(".inspector-heading")).toContainText("设备当前值");

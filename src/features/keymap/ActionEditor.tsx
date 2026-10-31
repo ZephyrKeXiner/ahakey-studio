@@ -40,7 +40,7 @@ const modifierNames: Record<Modifier, string> = {
 export function actionLabel(action: Action | null): string {
   if (!action) return "未读取";
   if (action.type === "disabled") return "禁用";
-  if (action.type === "macro") return `宏 · ${action.steps.length} 步`;
+  if (action.type === "macro") return `宏，${action.steps.length} 步`;
   return [
     ...action.modifiers.map((modifier) => modifierNames[modifier]),
     keyNames.get(action.keyCode) ?? `HID ${action.keyCode}`,

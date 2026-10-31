@@ -1,3 +1,4 @@
+import { auditLayout } from "./support/visual-audit";
 import { test, expect } from "@playwright/test";
 // Existing-user workspace fixture; first-install behavior is covered separately.
 test.beforeEach(async ({ page }) => {
@@ -179,25 +180,20 @@ test("prepares locally, confirms one target, and resumes the same task after rel
   ).toBeVisible();
   await page
     .getByRole("combobox", { name: "目标位置", exact: true })
-    .selectOption({ label: "多任务 · 已完成" });
+    .selectOption({ label: "多任务，已完成" });
   expect(
     await page.evaluate(() => (window as any).oledTest.requests.length),
   ).toBe(0);
-  await page.screenshot({
-    path: "test-results/oled-editor.png",
-    fullPage: true,
-  });
+  await auditLayout(page, "oled");
   await page.getByRole("button", { name: "上传到键盘", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText("多任务 · 已完成");
+  await expect(page.getByRole("dialog")).toContainText("多任务，已完成");
+  await auditLayout(page, "confirm-upload");
   await page.getByRole("button", { name: "确认上传", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("正在上传画面");
   await expect(
     page.getByRole("progressbar", { name: "上传进度" }),
   ).toHaveAttribute("value", "40");
-  await page.screenshot({
-    path: "test-results/oled-progress.png",
-    fullPage: true,
-  });
+  await auditLayout(page, "upload");
   await page
     .getByRole("button", { name: "暂停写入并恢复键盘", exact: true })
     .click();
@@ -258,7 +254,7 @@ test("crops a static image only after confirmation, without writing the device",
   await page.getByLabel("选择图片或动图").setInputFiles(file);
   await page.getByRole("slider", { name: "缩放", exact: true }).fill("2");
   await page.getByRole("slider", { name: "垂直位置", exact: true }).fill("0.8");
-  await page.screenshot({ path: "test-results/oled-crop.png", fullPage: true });
+  await auditLayout(page, "crop");
   await page.getByRole("button", { name: "使用此画面", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "portrait-160x80.png", exact: true }),

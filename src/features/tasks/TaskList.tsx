@@ -62,9 +62,9 @@ function TaskRow({
         <strong>{statuses[status] ?? status}</strong>
         <span className="operation-device">
           {keymap
-            ? `模式 ${keymap.request.mode + 1} · ${keymap.request.keys.map((key) => roleNames[key.index]).join("、")}`
+            ? `模式 ${keymap.request.mode + 1}，${keymap.request.keys.map((key) => roleNames[key.index]).join("、")}`
             : oled
-              ? `屏幕 · ${targetLabel(oled.request.target)}`
+              ? `屏幕，${targetLabel(oled.request.target)}`
               : settings
                 ? Object.keys(submittedFields(settings.request))
                     .map(fieldLabel)
@@ -110,23 +110,28 @@ function TaskRow({
           <span>{percentage}%</span>
         </div>
       ) : null}
-      <code>{id}</code>
+      <details className="secondary-details">
+        <summary>任务标识</summary>
+        <code>{id}</code>
+        {configuration?.saveAcknowledged ? (
+          <p className="field-hint">
+            保存命令已确认，尚未测试断电后的保留情况。
+          </p>
+        ) : null}
+      </details>
       {configuration ? (
         <p className="field-hint">
           已获确认 {configuration.fieldsAcknowledged} /{" "}
-          {configuration.fieldsTotal} 项 · 已读回核验{" "}
-          {configuration.fieldsVerified} 项 ·{" "}
+          {configuration.fieldsTotal} 项，已读回核验{" "}
+          {configuration.fieldsVerified} 项，
           {configuration.saveAcknowledged ? "保存命令已确认" : "保存命令待确认"}
-          {configuration.phase === "verifying" ? " · 正在核验设备" : ""}
+          {configuration.phase === "verifying" ? "，正在核验设备" : ""}
         </p>
       ) : null}
       {configuration && status === "paused" ? (
         <p className="field-hint">
           暂停保留原任务；继续前核对设备，已一致的字段会跳过。尚未确认保存的修改可能在设备断电后丢失。
         </p>
-      ) : null}
-      {configuration?.saveAcknowledged ? (
-        <p className="field-hint">保存命令确认不等于已验证断电保留。</p>
       ) : null}
       {confirmResume ? (
         <ConfirmDialog
@@ -149,7 +154,7 @@ function TaskRow({
       ) : null}
       {oled ? (
         <p className="field-hint">
-          {oled.filename} · {oled.resource.frameCount} 帧
+          {oled.filename}，{oled.resource.frameCount} 帧
         </p>
       ) : null}
       {operation?.effect === "unknown" &&
@@ -214,12 +219,7 @@ export function Tasks({
     orphanSettings.length;
   return (
     <section id="tasks" className="section">
-      <div className="section-heading">
-        <h2>
-          任务记录 <span>{count.toString().padStart(2, "0")}</span>
-        </h2>
-        <span>受理后由 Runtime 持续执行</span>
-      </div>
+      {count ? <p className="field-hint">{count} 个任务</p> : null}
       {count ? (
         <ul className="operations">
           {orphanKeys.map((task) => (
@@ -266,14 +266,12 @@ export function Tasks({
         </ul>
       ) : (
         <div className="empty-tasks">
-          <span aria-hidden="true">✓</span>
           <div>
             <strong>
               {runtime.status === "connected"
                 ? "暂无任务记录"
                 : "等待连接 Runtime"}
             </strong>
-            <p>写入前保存任务 ID，重连后核对原任务结果。</p>
           </div>
         </div>
       )}

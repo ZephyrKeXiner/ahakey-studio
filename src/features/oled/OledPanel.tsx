@@ -256,9 +256,7 @@ export function OledPanel({
     <section className="oled-panel">
       <div className="page-heading">
         <div>
-          <div className="eyebrow">OLED DISPLAY</div>
           <h1>屏幕画面</h1>
-          <p>为键盘挑选一张专属画面。</p>
         </div>
         <button
           className="primary-button"
@@ -307,16 +305,14 @@ export function OledPanel({
             ) : (
               <span>
                 {draft ? "素材已准备" : "160 × 80"}
-                <small>
-                  {draft ? "重新选择文件可查看本地预览" : "YOUR LITTLE CANVAS"}
-                </small>
+                <small>{draft ? "重新选择文件可查看预览" : "像素"}</small>
               </span>
             )}
           </div>
           <h2>{draft?.filename ?? "选择屏幕素材"}</h2>
           <p>
             {draft
-              ? `${draft.resource.frameCount} 帧 · 100 毫秒 / 帧 · 160 × 80 像素`
+              ? `${draft.resource.frameCount} 帧，100 毫秒 / 帧，160 × 80 像素`
               : "PNG、JPEG 或 GIF，最大 2 MiB。"}
           </p>
           <label
@@ -335,8 +331,7 @@ export function OledPanel({
             />
           </label>
           <p className="field-hint">
-            静态图片可预览并裁剪到 160 × 80。动图需符合该尺寸，使用固定 100
-            毫秒帧间隔、无限循环；透明部分显示为黑色。选择文件只准备素材，确认上传后才修改键盘。
+            GIF：160 × 80，100 毫秒帧间隔，无限循环。透明区域显示为黑色。
           </p>
         </article>
         <article className="oled-target">
@@ -380,7 +375,7 @@ export function OledPanel({
                   {!currentDocument
                     ? "等待重新读取"
                     : entry.valid
-                      ? `${entry.frameCount} 帧 · 已保存`
+                      ? `${entry.frameCount} 帧，已保存`
                       : ({
                           empty: "未上传",
                           writing: "写入未完成",
@@ -404,9 +399,7 @@ export function OledPanel({
               {entry!.maxFrames} 帧。
             </p>
           ) : null}
-          <p className="field-hint">
-            设备提供资源状态与帧数，当前不导出原图。素材预览来自本地文件；未上传的位置可能显示固件内置画面。
-          </p>
+          <p className="field-hint">预览来自本地文件，设备暂不支持导出原图。</p>
         </article>
       </div>
       {composer ? (
@@ -424,15 +417,13 @@ export function OledPanel({
           onConfirm={() => void submit()}
         >
           <p>
-            {device.name} · {targetLabel(confirm.task.request.target)}
+            {device.name}，{targetLabel(confirm.task.request.target)}
           </p>
           <p>
-            {confirm.task.filename} · {confirm.task.resource.frameCount} 帧
+            {confirm.task.filename}，{confirm.task.resource.frameCount} 帧
           </p>
           <p>
-            将覆盖此位置的画面，上传期间设备的部分控制暂不可用。退出 Studio
-            后，Runtime
-            会继续已受理的上传；需要暂停时请使用任务记录中的暂停按钮。
+            将覆盖此位置的画面。上传期间部分按键暂不可用，可在任务记录中暂停。
           </p>
         </ConfirmDialog>
       ) : null}

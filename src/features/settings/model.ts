@@ -37,7 +37,7 @@ const empty = (): SettingsDraft => ({ fields: {}, counter: 0, history: [] });
 export function fieldLabel(id: string): string {
   if (id === "brightness") return "全局亮度";
   const [, mode, index] = id.split(":").map(Number);
-  return `模式 ${mode + 1} · ${names[index]}描述`;
+  return `模式 ${mode + 1}，${names[index]}描述`;
 }
 export function formatField(value: FieldValue, id: string): string {
   return value === null

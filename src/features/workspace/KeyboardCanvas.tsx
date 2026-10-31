@@ -42,7 +42,7 @@ export function KeyboardCanvas({
   return (
     <section className="canvas-pane" aria-label="键盘配置画布">
       <div className="canvas-mode-row">
-        <h1>Keyboard Mode</h1>
+        <h1>键盘模式</h1>
         <div
           className="mode-segments"
           role="tablist"
@@ -85,17 +85,9 @@ export function KeyboardCanvas({
           ))}
         </div>
       </div>
-      <p className="mode-caption">
-        正在编辑 {modeNames[mode]} · Mode {mode + 1}
-        <span>切换编辑模式不会切换键盘当前模式。</span>
-      </p>
+      <p className="mode-caption">{modeNames[mode]} 模式</p>
       <div className="keyboard-stage">
         <div className="keyboard-board" aria-label="AhaKey X1 配置示意图">
-          <span className="board-screw top-left" />
-          <span className="board-screw top-right" />
-          <span className="board-screw bottom-left" />
-          <span className="board-screw bottom-right" />
-          <span className="board-port" />
           <button
             className={`board-light ${part === "settings" ? "selected" : ""}`}
             aria-label="灯条与亮度"
@@ -117,7 +109,7 @@ export function KeyboardCanvas({
           >
             <span className="board-screen">
               <StudioIcon name="screen" size={28} />
-              <span>LCD</span>
+              <span>屏幕</span>
               <small>160 × 80</small>
             </span>
           </button>
@@ -129,7 +121,7 @@ export function KeyboardCanvas({
                 <button
                   key={index}
                   className={`board-key key-button ${part === "keymap" && selectedKey === index ? "selected" : ""}`}
-                  aria-label={`Key ${index + 1} · ${roleNames[index]}`}
+                  aria-label={`Key ${index + 1}，${roleNames[index]}`}
                   aria-pressed={part === "keymap" && selectedKey === index}
                   onClick={() => onSelect("keymap", index)}
                 >
@@ -159,7 +151,7 @@ export function KeyboardCanvas({
             <span>
               <StudioIcon name="refresh" size={22} />
             </span>
-            <small>Mode</small>
+            <small>模式</small>
           </button>
           <button
             className="board-lever"
@@ -175,7 +167,6 @@ export function KeyboardCanvas({
           </button>
         </div>
       </div>
-      <p className="canvas-hint">点击灯条、屏幕或按键，配置你的 AhaKey。</p>
       <div className="canvas-tools" aria-label="配置面板">
         <button
           aria-pressed={part === "keymap"}
@@ -195,10 +186,6 @@ export function KeyboardCanvas({
           <StudioIcon name="screen" size={17} />
           屏幕画面
         </button>
-      </div>
-      <div className="canvas-note">
-        <span className="dot" />
-        本地编辑 · 确认后写入键盘<span>配置示意图</span>
       </div>
     </section>
   );

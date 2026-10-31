@@ -91,7 +91,7 @@ export function OperationDialog({
       }
     >
       <p>
-        {targetLabel(task.request.target)} · {task.filename}
+        {targetLabel(task.request.target)}，{task.filename}
       </p>
       <div className="operation-progress dialog-progress">
         <progress max="100" value={progress} aria-label="上传进度" />
@@ -118,15 +118,16 @@ export function OperationDialog({
       {status === "paused" && operation?.effect === "unknown" ? (
         <p>目标画面的写入结果仍待核对，暂停不会回滚已写入内容。</p>
       ) : null}
-      {completed ? (
-        <p>目标资源已提交，设备返回的帧数、长度和校验值与本次素材一致。</p>
-      ) : null}
+      {completed ? <p>画面已写入并通过校验。</p> : null}
       {error || task.message ? (
         <p className="inline-error" role="alert">
           {error ?? task.message}
         </p>
       ) : null}
-      <code className="operation-id">{id}</code>
+      <details className="secondary-details">
+        <summary>任务标识</summary>
+        <code className="operation-id">{id}</code>
+      </details>
     </Dialog>
   );
 }

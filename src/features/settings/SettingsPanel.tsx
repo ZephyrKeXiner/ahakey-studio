@@ -273,9 +273,8 @@ export function SettingsPanel({
     >
       <div className="page-heading">
         <div>
-          <div className="eyebrow">DEVICE SETTINGS</div>
           <h1>亮度与描述</h1>
-          <p>{device.name} · 只提交明确修改的项目。</p>
+          <p>{device.name}，只提交明确修改的项目。</p>
         </div>
         <button
           className="primary-button"
@@ -291,7 +290,7 @@ export function SettingsPanel({
           }
           onClick={() => void prepare()}
         >
-          {preparing ? "正在核对…" : `写入设置${dirty ? ` · ${dirty}` : ""}`}
+          {preparing ? "正在核对…" : `写入设置${dirty ? `，${dirty}` : ""}`}
         </button>
       </div>
       <ConfigurationReadControl
@@ -314,7 +313,6 @@ export function SettingsPanel({
                   ? "读取失败，可手动重试"
                   : "设置尚未更新"}
           </strong>
-          <p>读取结果经确认后进入编辑区，未知项目保持未知。</p>
         </div>
         <div className="readback-actions">
           <button
@@ -382,9 +380,7 @@ export function SettingsPanel({
       ) : null}
       <article className="system-card">
         <h2>按键描述</h2>
-        <p>
-          描述最多 20 个 ASCII 字符。空描述会清除对应文字，键位动作保持不变。
-        </p>
+        <p>最多 20 个 ASCII 字符，留空可清除描述。</p>
         <div className="settings-grid">
           {[0, 1, 2, 3].map((index) => field(descriptionId(mode, index)))}
         </div>
@@ -399,7 +395,7 @@ export function SettingsPanel({
           恢复上次同步前的设置草稿
         </button>
       ) : null}
-      <p className="field-hint">写入结果可在“任务记录”中查看。</p>
+
       {syncing && document ? (
         <ConfirmDialog
           title="同步设置到编辑区？"

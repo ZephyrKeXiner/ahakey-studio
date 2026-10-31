@@ -24,7 +24,7 @@ test("canvas selection shares the mode and key with the editor without writing o
     page.getByRole("tab", { name: "Cursor", exact: true }),
   ).toBeFocused();
   await page
-    .getByRole("button", { name: "Key 3 · 拒绝键", exact: true })
+    .getByRole("button", { name: "Key 3，拒绝键", exact: true })
     .click();
   await expect(
     page.getByRole("complementary", { name: "配置检查器" }),
@@ -97,8 +97,8 @@ test("canvas and inspector fit the minimum desktop width", async ({ page }) => {
   await page.goto("/");
   const canvas = page.getByRole("region", { name: "键盘配置画布" });
   for (const name of [
-    "Key 1 · Voice 键",
-    "Key 4 · 提交键",
+    "Key 1，Voice 键",
+    "Key 4，提交键",
     "LCD 屏幕",
     "灯条与亮度",
   ]) {
@@ -139,7 +139,7 @@ test("editor follows hardware mode changes and reconnect while preserving per-mo
   await expect(tab("custom")).toHaveAttribute("aria-selected", "true");
   await expect(
     page.getByRole("complementary", { name: "配置检查器" }),
-  ).toContainText("custom · Mode 4");
+  ).toContainText("custom，Mode 4");
   await update({ workMode: 1 });
   await expect(tab("Cursor")).toHaveAttribute("aria-selected", "true");
   await expect(key).toHaveValue("5");

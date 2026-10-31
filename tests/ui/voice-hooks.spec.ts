@@ -1,3 +1,4 @@
+import { auditLayout } from "./support/visual-audit";
 import { test, expect, type Page } from "@playwright/test";
 // Existing-user workspace fixture; first-install behavior is covered separately.
 test.beforeEach(async ({ page }) => {
@@ -331,6 +332,7 @@ test("Codex connection requires confirmation and a real event before reporting r
   expect(
     await page.evaluate(() => (window as any).featuresTest.calls),
   ).toHaveLength(0);
+  await auditLayout(page, "confirm-codex");
   await card.getByRole("button", { name: "确认连接 Codex" }).click();
   await expect(card).toContainText("已接入，联动关闭");
   await expect(
@@ -416,4 +418,47 @@ test("approval mode follows runtime state and saving a binding preserves a later
     method: "hooks.configure",
     params: { enabled: false, allowAutomatic: false, inputDeviceId: "hid-1" },
   });
+});
+
+test("voice, approvals, and setup remain readable through their full scroll areas", async ({
+  page,
+}) => {
+  await install(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: /^语音输入/ }).click();
+  await auditLayout(page, "voice-top");
+  await page.getByText("打开系统权限设置", { exact: true }).click();
+  await auditLayout(page, "voice-permissions");
+  await page
+    .getByRole("button", { name: "保存录音设置", exact: true })
+    .scrollIntoViewIfNeeded();
+  await auditLayout(page, "voice-bottom");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "AI 编程联动", exact: true }).click();
+  await page.getByText("高级设置与记录", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "录入批准键", exact: true })
+    .scrollIntoViewIfNeeded();
+  await auditLayout(page, "hooks-binding");
+  await page
+    .getByRole("button", { name: "生成接入配置", exact: true })
+    .scrollIntoViewIfNeeded();
+  await auditLayout(page, "hooks-tools");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "新手引导", exact: true }).click();
+  for (const [index, step] of [
+    "连接键盘",
+    "语音与权限",
+    "连接 Codex",
+    "完成",
+  ].entries()) {
+    await page
+      .getByRole("navigation", { name: "设置步骤" })
+      .getByRole("button", { name: step, exact: true })
+      .click();
+    await auditLayout(page, `setup-${index}`);
+  }
+  expect(
+    await page.evaluate(() => (window as any).featuresTest.calls),
+  ).toHaveLength(0);
 });

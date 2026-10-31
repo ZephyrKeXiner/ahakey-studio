@@ -45,14 +45,14 @@ type Sheet =
   | "lever"
   | "about";
 const sheetTitles: Record<Sheet, string> = {
-  device: "设备信息 · Runtime",
+  device: "设备信息",
   tasks: "任务记录",
   system: "权限诊断",
   help: "AhaKey Studio 帮助中心",
   welcome: "开始使用 AhaKey",
   voice: "语音输入",
   firmware: "固件升级",
-  lever: "AI 编程联动 · 拨杆",
+  lever: "AI 编程联动",
   hooks: "AI 编程联动",
   about: "关于 AhaKey Studio",
 };
@@ -108,10 +108,6 @@ function DeviceDetails({
         </div>
         <dl className="device-details">
           <div>
-            <dt>设备</dt>
-            <dd>{device?.deviceId ?? "尚未发现"}</dd>
-          </div>
-          <div>
             <dt>电量</dt>
             <dd>
               {online && device?.batteryPercent != null
@@ -123,7 +119,7 @@ function DeviceDetails({
             <dt>键盘当前模式</dt>
             <dd>
               {online && device?.workMode != null
-                ? `${modeNames[device.workMode] ?? "模式"} · Mode ${device.workMode + 1}`
+                ? `${modeNames[device.workMode] ?? "模式"}，Mode ${device.workMode + 1}`
                 : "未知"}
             </dd>
           </div>
@@ -136,6 +132,12 @@ function DeviceDetails({
             <dd>{online ? runtime.inspection?.runtimeVersion : "未连接"}</dd>
           </div>
         </dl>
+        {device ? (
+          <details className="secondary-details">
+            <summary>设备标识</summary>
+            <p>{device.deviceId}</p>
+          </details>
+        ) : null}
         {device ? (
           <button
             className="secondary-button"
@@ -270,7 +272,6 @@ export default function App() {
           <div className="toolbar-metric">
             <small>电量</small>
             <strong>
-              <i className="status-dot blue" />
               {online && device?.batteryPercent != null
                 ? `${device.batteryPercent}%`
                 : "—"}
@@ -281,21 +282,25 @@ export default function App() {
             onClick={() => openSheet("lever")}
           >
             <small>拨杆</small>
-            <strong>
-              <i className="status-dot purple" />
-              {leverLabel(online ? device?.lever : null)}
-            </strong>
+            <strong>{leverLabel(online ? device?.lever : null)}</strong>
           </button>
         </div>
         <div className="toolbar-spacer" />
-        <button className="toolbar-button" onClick={() => openSheet("hooks")}>AI 编程联动</button>
+        <button className="toolbar-button" onClick={() => openSheet("hooks")}>
+          AI 编程联动
+        </button>
         <button className="voice-status" onClick={() => openSheet("voice")}>
           <i className="status-dot gray" />
           <span>
             <strong>语音输入</strong>
-            <small>{online ? (voiceStatus[runtime.inspection?.snapshot.voice?.status ?? "unavailable"]) : "未连接"}</small>
+            <small>
+              {online
+                ? voiceStatus[
+                    runtime.inspection?.snapshot.voice?.status ?? "unavailable"
+                  ]
+                : "未连接"}
+            </small>
           </span>
-          <span className="inactive-toggle" aria-hidden="true" />
         </button>
         <div className="runtime-indicator">
           <i className={`status-dot ${online ? "green" : "orange"}`} />
@@ -308,7 +313,7 @@ export default function App() {
           <button
             className="icon-button"
             title="任务记录"
-            aria-label={`任务记录${pending ? ` · ${pending}` : ""}`}
+            aria-label={`任务记录${pending ? `，${pending}` : ""}`}
             onClick={() => openSheet("tasks")}
           >
             <StudioIcon name="tasks" />
@@ -346,16 +351,14 @@ export default function App() {
             </summary>
             <div className="menu-popover">
               <button onClick={() => openSheet("device")}>
-                设备信息 · Runtime
+                设备信息
                 <StudioIcon name="info" size={16} />
               </button>
               <button onClick={() => openSheet("firmware")}>
                 固件升级<span>未接入</span>
               </button>
               <hr />
-              <button onClick={() => openSheet("voice")}>
-                语音输入 · Apple Speech
-              </button>
+              <button onClick={() => openSheet("voice")}>语音输入</button>
               <button onClick={() => openSheet("help")}>
                 帮助中心
                 <StudioIcon name="help" size={16} />
@@ -409,7 +412,7 @@ export default function App() {
             <div>
               <h2>{title}</h2>
               <p>
-                {modeNames[mode]} · Mode {mode + 1}
+                {modeNames[mode]}，Mode {mode + 1}
               </p>
             </div>
             <button
@@ -494,13 +497,10 @@ export default function App() {
       <footer className="studio-statusbar">
         <span className="selection-status">
           <StudioIcon name={partIcons[part]} size={16} />
-          {title} · Mode {mode + 1}
+          {title}，Mode {mode + 1}
         </span>
         <span className={dirty ? "unsaved-status" : ""}>
-          未同步改动 <b>{dirty}</b>
-        </span>
-        <span className="statusbar-hint">
-          修改先保存在本地，确认后再写入设备。
+          未写入 <b>{dirty}</b>
         </span>
         <div className="statusbar-links">
           <button onClick={() => openSheet("system")}>权限诊断</button>
@@ -512,7 +512,7 @@ export default function App() {
         <Dialog
           key={sheet}
           title={sheetTitles[sheet]}
-          className={`studio-sheet ${sheet === "help" ? "help-sheet" : ""}`}
+          className={`studio-sheet ${sheet === "help" ? "help-sheet" : sheet === "about" || sheet === "firmware" ? "compact-sheet" : ""}`}
           onClose={() => {
             if (sheet === "welcome") rememberSetup();
             setSheet(null);
@@ -535,9 +535,6 @@ export default function App() {
           {sheet === "system" ? <SystemPanel runtime={runtime} /> : null}
           {sheet === "tasks" ? (
             <>
-              <p className="sheet-intro">
-                查看设备任务，核对写入结果，继续已暂停的操作。
-              </p>
               <Tasks runtime={runtime} controller={controller} />
             </>
           ) : null}
@@ -545,24 +542,21 @@ export default function App() {
           {sheet === "welcome" ? (
             <SetupGuide runtime={runtime} onClose={() => setSheet(null)} />
           ) : null}
-          {sheet === "voice" ? <VoicePanel key={runtime.generation} runtime={runtime}/> : null}
+          {sheet === "voice" ? (
+            <VoicePanel key={runtime.generation} runtime={runtime} />
+          ) : null}
           {sheet === "firmware" ? (
             <div className="feature-placeholder">
-              <StudioIcon name="keyboard" size={40} />
               <h3>固件升级尚未接入</h3>
-              <p>
-                当前版本提供配置编辑与 OLED 上传，暂不支持 USB ISP 固件烧录。
-              </p>
+              <p>请使用配套烧录工具更新固件。</p>
             </div>
           ) : null}
-          {sheet === "lever" || sheet === "hooks" ? <HooksPanel key={runtime.generation} runtime={runtime}/> : null}
+          {sheet === "lever" || sheet === "hooks" ? (
+            <HooksPanel key={runtime.generation} runtime={runtime} />
+          ) : null}
           {sheet === "about" ? (
             <div className="feature-placeholder">
-              <StudioIcon name="keyboard" size={48} />
-              <h3>AhaKey Studio</h3>
-              <p>版本 0.1.0 · Tauri 桌面端</p>
-              <p>你的设备，由你掌控。</p>
-              <p>由 Rust Runtime 管理连接与设备任务。</p>
+              <p>版本 0.1.0</p>
             </div>
           ) : null}
         </Dialog>

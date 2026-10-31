@@ -129,7 +129,7 @@ export function ImageComposer({
       }
     >
       <p>
-        {source.filename} · {source.image.naturalWidth} ×{" "}
+        {source.filename}，{source.image.naturalWidth} ×{" "}
         {source.image.naturalHeight} 像素
       </p>
       <div className="crop-preview">
@@ -179,10 +179,7 @@ export function ImageComposer({
           />
         </label>
       </div>
-      <p className="field-hint">
-        将预览区域转换为 160 × 80 的
-        PNG，透明部分合成到黑底。原文件保持不变；此步骤不会写入键盘。
-      </p>
+      <p className="field-hint">裁剪为 160 × 80 PNG，透明区域显示为黑色。</p>
       {error ? (
         <p className="inline-error" role="alert">
           {error}

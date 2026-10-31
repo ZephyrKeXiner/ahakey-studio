@@ -27,7 +27,8 @@ const errors: Record<string, string> = {
   VOICE_PERMISSION_REQUIRED: "请先授予麦克风与语音识别权限。",
   VOICE_INPUT_REQUIRED: "请启用后台输入监听，并选择当前 AhaKey 输入设备。",
   VOICE_INPUT_NOT_READY: "请先松开键盘按键，确认输入监听正常后再启用。",
-  VOICE_INPUT_LOST: "输入设备断开或监听停止，请重新选择设备并启用。",
+  VOICE_INPUT_LOST:
+    "输入设备断开或监听停止，等待已绑定设备恢复；没有稳定身份时请重新选择。",
   VOICE_BUSY: "当前语音会话尚未结束。",
   VOICE_SESSION_CHANGED: "语音会话已变化，请查看当前状态。",
   VOICE_OFFLINE_UNAVAILABLE: "当前语言没有可用的本机识别能力。",
@@ -100,10 +101,6 @@ export function VoicePanel({ runtime }: { runtime: ClientView }) {
     run("voice.control", { action, sessionId: view?.sessionId ?? null });
   return (
     <section className="voice-panel">
-      <p>
-        使用电脑麦克风与 Apple Speech。按键触发在 Runtime 后台运行，退出 Studio
-        仍可使用。
-      </p>
       {!supported ? (
         <p className="inline-notice">请连接支持语音输入的新版 Runtime。</p>
       ) : null}
@@ -113,11 +110,21 @@ export function VoicePanel({ runtime }: { runtime: ClientView }) {
         </p>
       ) : null}
       <div className="system-card">
-        <p>
-          麦克风：{permissions[view?.microphone ?? "unknown"]} · 语音识别：
-          {permissions[view?.speech ?? "unknown"]} · 辅助功能：
-          {view?.accessibility ? "已授权" : "未授权"}
-        </p>
+        <h3>权限</h3>
+        <dl className="permission-list">
+          <div>
+            <dt>麦克风</dt>
+            <dd>{permissions[view?.microphone ?? "unknown"]}</dd>
+          </div>
+          <div>
+            <dt>语音识别</dt>
+            <dd>{permissions[view?.speech ?? "unknown"]}</dd>
+          </div>
+          <div>
+            <dt>辅助功能</dt>
+            <dd>{view?.accessibility ? "已授权" : "未授权"}</dd>
+          </div>
+        </dl>
         <div className="voice-actions">
           <button
             disabled={!ready || busy || active}
@@ -128,26 +135,35 @@ export function VoicePanel({ runtime }: { runtime: ClientView }) {
           <button disabled={!ready || busy} onClick={() => control("refresh")}>
             刷新权限
           </button>
-          <button disabled={busy} onClick={() => openPermission("microphone")}>
-            麦克风设置
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => openPermission("speechRecognition")}
-          >
-            语音识别设置
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => openPermission("accessibility")}
-          >
-            辅助功能设置
-          </button>
         </div>
+        <details className="secondary-details">
+          <summary>打开系统权限设置</summary>
+          <div className="voice-actions">
+            <button
+              disabled={busy}
+              onClick={() => openPermission("microphone")}
+            >
+              麦克风设置
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => openPermission("speechRecognition")}
+            >
+              语音识别设置
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => openPermission("accessibility")}
+            >
+              辅助功能设置
+            </button>
+          </div>
+        </details>
       </div>
       <div className="system-card">
+        <h3>试录</h3>
         <p role="status">
-          {voiceStatus[view?.status ?? "unavailable"] ?? view?.status} ·
+          {voiceStatus[view?.status ?? "unavailable"] ?? view?.status}，
           按键录音{view?.preferences.enabled ? "已启用" : "未启用"}
         </p>
         <div className="voice-actions">
@@ -204,15 +220,14 @@ export function VoicePanel({ runtime }: { runtime: ClientView }) {
             {(runtime.inspection?.snapshot.input?.devices ?? []).map(
               (device) => (
                 <option key={device.inputDeviceId} value={device.inputDeviceId}>
-                  {device.name} · {device.inputDeviceId}
+                  {device.name}
                 </option>
               ),
             )}
           </select>
         </label>
         <p className="field-hint">
-          先在“系统与权限”启用后台输入监听。当前接收所选设备的 F18（Voice
-          键）；不会修改固件键位。Runtime 重启或设备断开后需重新选择。
+          先在“系统与权限”启用后台输入监听。Voice 键需发送 F18。
         </p>
         <label>
           录音方式
@@ -253,10 +268,7 @@ export function VoicePanel({ runtime }: { runtime: ClientView }) {
           />
           仅本机识别
         </label>
-        <p className="field-hint">
-          关闭时 Apple Speech
-          可能联网处理音频。开启后不支持本机识别的语言会提示错误。
-        </p>
+        <p className="field-hint">关闭后，Apple Speech 可能联网处理音频。</p>
         <label className="voice-check">
           <input
             type="checkbox"
@@ -287,9 +299,6 @@ export function VoicePanel({ runtime }: { runtime: ClientView }) {
           {error ?? errors[view!.error!] ?? view?.error}
         </p>
       ) : null}
-      <p className="field-hint">
-        AhaType 云端文字整理和账号尚未接入；当前结果来自 Apple Speech。
-      </p>
     </section>
   );
 }

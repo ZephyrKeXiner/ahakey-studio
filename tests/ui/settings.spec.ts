@@ -1,3 +1,4 @@
+import { auditLayout } from "./support/visual-audit";
 import { test, expect, type Page } from "@playwright/test";
 // Existing-user workspace fixture; first-install behavior is covered separately.
 test.beforeEach(async ({ page }) => {
@@ -283,7 +284,7 @@ test("explicit sync leaves unknown fields unknown and makes previous drafts reco
     exact: true,
   });
   const description = page.getByRole("textbox", {
-    name: "模式 1 · Voice 键描述",
+    name: "模式 1，Voice 键描述",
     exact: true,
   });
   await expect(brightness).toHaveValue("");
@@ -309,14 +310,15 @@ test("only changed descriptions are sent, newer edits survive completion and rel
   await editor(page);
   await sync(page);
   const description = page.getByRole("textbox", {
-    name: "模式 1 · Voice 键描述",
+    name: "模式 1，Voice 键描述",
     exact: true,
   });
   await description.fill("Plan");
-  await page.getByRole("button", { name: "写入设置 · 1", exact: true }).click();
+  await page.getByRole("button", { name: "写入设置，1", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText(
     "部分设备当前值尚未读取",
   );
+  await auditLayout(page, "confirm-settings");
   await page.getByRole("button", { name: "确认写入设置", exact: true }).click();
   await description.fill("New draft");
   await page.getByRole("button", { name: "键位编辑", exact: true }).click();
@@ -324,7 +326,7 @@ test("only changed descriptions are sent, newer edits survive completion and rel
     .getByRole("combobox", { name: "动作类型", exact: true })
     .selectOption("disabled");
   await expect(
-    page.getByRole("button", { name: "写入修改 · 1", exact: true }),
+    page.getByRole("button", { name: "写入修改，1", exact: true }),
   ).toBeDisabled();
   await page.reload();
   {
@@ -341,7 +343,7 @@ test("only changed descriptions are sent, newer edits survive completion and rel
   await expect(description).toHaveValue("New draft");
   await page.evaluate(() => (window as any).fieldsTest.complete());
   await expect(
-    page.getByRole("button", { name: "写入设置 · 1", exact: true }),
+    page.getByRole("button", { name: "写入设置，1", exact: true }),
   ).toBeEnabled();
   await expect(description).toHaveValue("New draft");
   const requests = await page.evaluate(
@@ -352,13 +354,10 @@ test("only changed descriptions are sent, newer edits survive completion and rel
   expect(requests[0].descriptions).toEqual([
     { mode: 0, index: 0, description: "Plan" },
   ]);
-  await page.screenshot({
-    path: "test-results/settings-editor.png",
-    fullPage: true,
-  });
+  await auditLayout(page, "settings-populated");
   await page.getByRole("button", { name: /任务记录/, exact: false }).click();
   await expect(page.locator(".operation-device")).toContainText(
-    "模式 1 · Voice 键描述",
+    "模式 1，Voice 键描述",
   );
 });
 
@@ -373,7 +372,7 @@ test("brightness changes do not resend descriptions and offline drafts stay edit
     exact: true,
   });
   await brightness.fill("57");
-  await page.getByRole("button", { name: "写入设置 · 1", exact: true }).click();
+  await page.getByRole("button", { name: "写入设置，1", exact: true }).click();
   await page.getByRole("button", { name: "确认写入设置", exact: true }).click();
   const requests = await page.evaluate(
     () => (window as any).fieldsTest.state.requests,
@@ -384,7 +383,7 @@ test("brightness changes do not resend descriptions and offline drafts stay edit
   await brightness.fill("42");
   await expect(brightness).toHaveValue("42");
   await expect(
-    page.getByRole("button", { name: "写入设置 · 1", exact: true }),
+    page.getByRole("button", { name: "写入设置，1", exact: true }),
   ).toBeDisabled();
 });
 
@@ -398,7 +397,7 @@ test("older Runtime allows drafting but disables unsupported field writes", asyn
     .fill("57");
   await expect(page.getByText(/当前 Runtime 不支持字段级设置/)).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "写入设置 · 1", exact: true }),
+    page.getByRole("button", { name: "写入设置，1", exact: true }),
   ).toBeDisabled();
   expect(
     await page.evaluate(() => (window as any).fieldsTest.state.requests),
@@ -412,7 +411,7 @@ test("clearing a known description is an explicit empty field replacement", asyn
   await editor(page);
   await sync(page);
   const description = page.getByRole("textbox", {
-    name: "模式 1 · Voice 键描述",
+    name: "模式 1，Voice 键描述",
     exact: true,
   });
   await expect(description).toHaveValue("voice");
@@ -421,7 +420,7 @@ test("clearing a known description is an explicit empty field replacement", asyn
     .click();
   await expect(description).toHaveValue("");
   await expect(description).toHaveAttribute("placeholder", "空描述");
-  await page.getByRole("button", { name: "写入设置 · 1", exact: true }).click();
+  await page.getByRole("button", { name: "写入设置，1", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("空描述");
   await page.getByRole("button", { name: "确认写入设置", exact: true }).click();
   const requests = await page.evaluate(
@@ -443,9 +442,9 @@ test("hardware reading survives UI reload, blocks writes, and requires explicit 
   await page
     .getByRole("button", { name: "从设备完整读取", exact: true })
     .click();
-  await expect(page.getByText("正在从设备读取 · 第 1 / 3 次")).toBeVisible();
+  await expect(page.getByText("正在从设备读取，第 1 / 3 次")).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "写入设置 · 1", exact: true }),
+    page.getByRole("button", { name: "写入设置，1", exact: true }),
   ).toBeDisabled();
   await expect(
     page.getByRole("button", { name: "同步设置到编辑区", exact: true }),
@@ -463,16 +462,14 @@ test("hardware reading survives UI reload, blocks writes, and requires explicit 
         .click();
   }
   await page.getByRole("button", { name: "亮度与描述", exact: true }).click();
-  await expect(page.getByText("正在从设备读取 · 第 1 / 3 次")).toBeVisible();
+  await expect(page.getByText("正在从设备读取，第 1 / 3 次")).toBeVisible();
   expect(
     await page.evaluate(() => (window as any).fieldsTest.state.readRequests),
   ).toBe(1);
   await page.evaluate(() => (window as any).fieldsTest.retryRead());
-  await expect(page.getByText("正在从设备读取 · 第 2 / 3 次")).toBeVisible();
+  await expect(page.getByText("正在从设备读取，第 2 / 3 次")).toBeVisible();
   await page.evaluate(() => (window as any).fieldsTest.finishRead());
-  await expect(
-    page.getByText("当前值来自设备读回；同步到编辑区仍需确认。"),
-  ).toBeVisible();
+  await expect(page.getByText("读回完成，请同步到编辑区。")).toBeVisible();
   await expect(page.getByRole("spinbutton", { name: "亮度" })).toHaveValue(
     "51",
   );
@@ -502,10 +499,10 @@ test("failed hardware read exposes manual retry and shares its state across conf
     await page.evaluate(() => (window as any).fieldsTest.state.readRequests),
   ).toBe(2);
   await page.getByRole("button", { name: "键位编辑", exact: true }).click();
-  await expect(page.getByText("正在从设备读取 · 第 1 / 3 次")).toBeVisible();
+  await expect(page.getByText("正在从设备读取，第 1 / 3 次")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "同步到编辑区", exact: true }),
-  ).toBeDisabled();
+  ).toHaveCount(0);
 });
 
 test("configuration pause and explicit resume retain original task and newer draft after reload", async ({
@@ -514,9 +511,9 @@ test("configuration pause and explicit resume retain original task and newer dra
   await install(page, { transaction: true });
   await editor(page);
   await page
-    .getByRole("textbox", { name: "模式 1 · Voice 键描述", exact: true })
+    .getByRole("textbox", { name: "模式 1，Voice 键描述", exact: true })
     .fill("Frozen");
-  await page.getByRole("button", { name: "写入设置 · 1", exact: true }).click();
+  await page.getByRole("button", { name: "写入设置，1", exact: true }).click();
   await page.getByRole("button", { name: "确认写入设置", exact: true }).click();
   await page.getByRole("button", { name: /^任务记录/ }).click();
   await page.getByRole("button", { name: "暂停配置写入", exact: true }).click();
@@ -541,7 +538,7 @@ test("configuration pause and explicit resume retain original task and newer dra
   }
   await page.getByRole("button", { name: "亮度与描述", exact: true }).click();
   await page
-    .getByRole("textbox", { name: "模式 1 · Voice 键描述", exact: true })
+    .getByRole("textbox", { name: "模式 1，Voice 键描述", exact: true })
     .fill("Newer draft");
   await page.getByRole("button", { name: /^任务记录/ }).click();
   await page
@@ -564,12 +561,9 @@ test("configuration pause and explicit resume retain original task and newer dra
   ]);
   await page.evaluate(() => (window as any).fieldsTest.complete());
   await expect(
-    page.getByText(/已获确认 1 \/ 1 项 · 已读回核验 1 项 · 保存命令已确认/),
+    page.getByText(/已获确认 1 \/ 1 项，已读回核验 1 项，保存命令已确认/),
   ).toBeVisible();
-  await page.screenshot({
-    path: "test-results/configuration-resume.png",
-    fullPage: true,
-  });
+  await auditLayout(page, "tasks-populated");
   {
     const taskSheet = page.getByRole("dialog", {
       name: "任务记录",
@@ -582,10 +576,10 @@ test("configuration pause and explicit resume retain original task and newer dra
   }
   await page.getByRole("button", { name: "亮度与描述", exact: true }).click();
   await expect(
-    page.getByRole("textbox", { name: "模式 1 · Voice 键描述", exact: true }),
+    page.getByRole("textbox", { name: "模式 1，Voice 键描述", exact: true }),
   ).toHaveValue("Newer draft");
   await expect(
-    page.getByRole("button", { name: "写入设置 · 1", exact: true }),
+    page.getByRole("button", { name: "写入设置，1", exact: true }),
   ).toBeEnabled();
 });
 
@@ -597,12 +591,12 @@ test("light inspector follows the canvas mode and submits only that description"
   await page.getByRole("tab", { name: "Codex", exact: true }).click();
   await page.getByRole("button", { name: "灯条与亮度", exact: true }).click();
   await page
-    .getByRole("textbox", { name: "模式 3 · 批准键描述", exact: true })
+    .getByRole("textbox", { name: "模式 3，批准键描述", exact: true })
     .fill("Accept");
   expect(
     await page.evaluate(() => (window as any).fieldsTest.state.requests),
   ).toHaveLength(0);
-  await page.getByRole("button", { name: "写入设置 · 1", exact: true }).click();
+  await page.getByRole("button", { name: "写入设置，1", exact: true }).click();
   await page.getByRole("button", { name: "确认写入设置", exact: true }).click();
   const requests = await page.evaluate(
     () => (window as any).fieldsTest.state.requests,

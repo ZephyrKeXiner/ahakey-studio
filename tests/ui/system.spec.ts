@@ -95,7 +95,7 @@ test("permission changes come from Runtime, settings navigation never grants per
   await page
     .getByRole("button", { name: "打开输入监控权限", exact: true })
     .click();
-  await expect(page.getByRole("status")).toContainText("以后台更新的状态为准");
+  await expect(page.getByRole("status")).toContainText("等待权限状态更新");
   await expect(panel).toContainText("未允许");
   await page.evaluate(() =>
     (window as any).updateInput({

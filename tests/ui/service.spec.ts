@@ -1,3 +1,4 @@
+import { auditLayout } from "./support/visual-audit";
 import { test, expect } from "@playwright/test";
 // Existing-user workspace fixture; first-install behavior is covered separately.
 test.beforeEach(async ({ page }) => {
@@ -69,8 +70,9 @@ test("closing the managed Runtime requires confirmation and does not automatical
   await page.getByRole("button", { name: "关闭 Runtime", exact: true }).click();
   await expect(
     page.getByRole("dialog", { name: "关闭后台 Runtime？", exact: true }),
-  ).toContainText("本次 Studio 会保持关闭状态");
+  ).toContainText("语音和审批联动停止");
   expect(await page.evaluate(() => (window as any).serviceTest.stops)).toBe(0);
+  await auditLayout(page, "confirm-service");
   await page
     .getByRole("dialog", { name: "关闭后台 Runtime？", exact: true })
     .getByRole("button", { name: "关闭 Runtime", exact: true })

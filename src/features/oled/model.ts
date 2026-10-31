@@ -2,10 +2,9 @@ import type { OledTarget, OledTask, Operation } from "../../runtime/types";
 import type { Workspace } from "../keymap/model";
 export function targetLabel(target: OledTarget): string {
   const states = { working: "工作中", waiting: "等待中", done: "已完成" };
-  if (target.kind === "modeDefault")
-    return `模式 ${target.mode + 1} · 默认画面`;
-  if (target.kind === "multiState") return `多任务 · ${states[target.state]}`;
-  return `模式 ${target.mode + 1} · ${states[target.state]}`;
+  if (target.kind === "modeDefault") return `模式 ${target.mode + 1}，默认画面`;
+  if (target.kind === "multiState") return `多任务，${states[target.state]}`;
+  return `模式 ${target.mode + 1}，${states[target.state]}`;
 }
 export function unsettledOled(task: OledTask): boolean {
   return ["pending", "accepted", "running", "uncertain"].includes(task.status);

@@ -84,9 +84,7 @@ export function ServicePanel() {
             ? ` 已自动恢复 ${status.restarts} / 3 次。`
             : ""}
         </p>
-        <p className="field-hint">
-          关闭 Studio 后继续运行；电脑重启后，打开 Studio 才会再次启动。
-        </p>
+        <p className="field-hint">关闭 Studio 后继续运行。</p>
         {error ? (
           <p className="inline-error" role="alert">
             {error}
@@ -125,9 +123,8 @@ export function ServicePanel() {
           onConfirm={() => void change(false)}
         >
           <p>
-            正在进行的任务会按 Runtime
-            的关闭流程结束或暂停。设备后台功能将停止，本次 Studio
-            会保持关闭状态；下次打开 Studio 时自动启动。
+            当前任务将结束或暂停，语音和审批联动停止。下次打开 Studio
+            时自动启动后台。
           </p>
         </ConfirmDialog>
       ) : null}
