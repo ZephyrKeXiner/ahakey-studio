@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isTauri } from "@tauri-apps/api/core";
 import { SettingsPanel } from "./features/settings/SettingsPanel";
 import { SystemPanel } from "./features/system/SystemPanel";
 import { OperationDialog } from "./features/tasks/OperationDialog";
@@ -32,6 +33,8 @@ import {
 } from "./features/setup/SetupGuide";
 import { watchWindowClose } from "./runtime/window";
 import "./App.css";
+
+const macDesktop = isTauri() && /Mac/.test(navigator.platform);
 
 type Sheet =
   | "device"
@@ -243,6 +246,9 @@ export default function App() {
   }
   return (
     <div className="studio-shell">
+      {macDesktop && (
+        <div className="studio-titlebar" data-tauri-drag-region aria-hidden="true" />
+      )}
       <header className="studio-toolbar">
         <button
           className="studio-brand"

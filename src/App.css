@@ -82,6 +82,11 @@ summary {
   min-height: 540px;
   overflow: hidden;
 }
+.studio-titlebar {
+  flex: 0 0 28px;
+  background: #fff;
+  user-select: none;
+}
 .studio-toolbar {
   min-height: 72px;
   padding: 17px 24px;
