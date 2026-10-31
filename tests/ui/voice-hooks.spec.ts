@@ -88,7 +88,8 @@ async function install(page: Page) {
             },
           },
         };
-    let codex = {
+    const integrations: Record<string, any> = {};
+    const initialIntegration = {
       installed: false,
       needsRepair: false,
       configPath: "/fixture/.codex/hooks.json",
@@ -210,11 +211,16 @@ async function install(page: Page) {
           publish();
           return structuredClone(hooks);
         }
-        if (command === "codex_integration") {
+        if (command === "tool_integration") {
+          let codex = integrations[args.tool] ?? {
+            ...initialIntegration,
+            configPath: `/fixture/.${args.tool}/${args.tool === "kimi" ? "config.toml" : args.tool === "claude" ? "settings.json" : "hooks.json"}`,
+          };
           if (args.action !== "status") calls.push({ command, ...args });
           if (args.action === "install")
             codex = { ...codex, installed: true, installedAtMs: Date.now() };
           if (args.action === "remove") codex = { ...codex, installed: false };
+          integrations[args.tool] = codex;
           return { ...codex };
         }
         if (command === "runtime_hook_config") {
@@ -284,45 +290,25 @@ test("voice recording is explicit, stop targets the original session, and reload
   await page.evaluate(() => (window as any).featuresTest.disconnect());
   await expect(page.getByRole("button", { name: "开始试录" })).toBeDisabled();
 });
-test("AI integration requires explicit enable and approval targets the displayed request", async ({
+test("removed AI page has no entry and lever links open device information", async ({
   page,
 }) => {
   await install(page);
-  await page.setViewportSize({ width: 1280, height: 820 });
   await page.goto("/");
-  await page.getByRole("button", { name: "AI 编程联动", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "AI 编程联动", exact: true }),
+  ).toHaveCount(0);
+  for (const name of [/^拨杆/, /^查看拨杆状态$/]) {
+    await page.getByRole("button", { name }).click();
+    await expect(page.getByRole("dialog")).toContainText("设备信息");
+    await expect(
+      page.getByRole("radiogroup", { name: "审批方式" }),
+    ).toHaveCount(0);
+    await page.keyboard.press("Escape");
+  }
   expect(
     await page.evaluate(() => (window as any).featuresTest.calls),
   ).toHaveLength(0);
-  await expect(page.getByLabel("关联键盘")).toBeHidden();
-  await expect(page.getByRole("button", { name: "生成接入配置" })).toBeHidden();
-  await page.getByRole("radio", { name: "手动确认", exact: true }).check();
-  expect(
-    await page.evaluate(() => (window as any).featuresTest.calls[0]),
-  ).toMatchObject({
-    method: "hooks.configure",
-    params: { enabled: true, deviceId: "x1", allowAutomatic: false },
-  });
-  await page.evaluate(() => (window as any).featuresTest.approval());
-  await expect(page.getByRole("dialog")).toContainText("echo hello");
-  await page.screenshot({ path: "test-results/ai-integration.png" });
-  await page.getByRole("button", { name: "拒绝本次" }).click();
-  expect(
-    await page.evaluate(() => (window as any).featuresTest.calls.at(-1)),
-  ).toMatchObject({
-    method: "hooks.decide",
-    params: { requestId: "approval-123", decision: "deny" },
-  });
-  await page.getByText("高级设置与记录", { exact: true }).click();
-  await page.getByLabel("工具", { exact: true }).selectOption("codex");
-  await page.getByRole("button", { name: "生成接入配置" }).click();
-  await expect(
-    page.getByRole("textbox", { name: "Hook 接入配置" }),
-  ).toContainText("--tool codex");
-  await page.evaluate(() => (window as any).featuresTest.disconnect());
-  await expect(
-    page.getByRole("radio", { name: "手动确认", exact: true }),
-  ).toBeDisabled();
 });
 
 test("Codex connection requires confirmation and a real event before reporting receipt", async ({
@@ -330,7 +316,11 @@ test("Codex connection requires confirmation and a real event before reporting r
 }) => {
   await install(page);
   await page.goto("/");
-  await page.getByRole("button", { name: "AI 编程联动", exact: true }).click();
+  await page.getByRole("button", { name: "新手引导", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "设置步骤" })
+    .getByRole("button", { name: "连接开发工具", exact: true })
+    .click();
   const card = page.getByRole("region", { name: "Codex 接入" });
   await card.getByRole("button", { name: "连接 Codex", exact: true }).click();
   expect(
@@ -341,13 +331,11 @@ test("Codex connection requires confirmation and a real event before reporting r
   await expect(card).toContainText("已接入，联动关闭");
   await expect(
     card.getByRole("button", { name: "移除 Codex 接入" }),
-  ).toBeHidden();
-  await page.screenshot({ path: "test-results/ai-integration-compact.png" });
-  await page.getByRole("radio", { name: "手动确认", exact: true }).check();
+  ).toBeVisible();
+  await card.getByRole("button", { name: "启用手动联动", exact: true }).click();
   await expect(card).toContainText("已接入，等待事件");
   await page.evaluate(() => (window as any).featuresTest.codexEvent());
   await expect(card).toContainText("已收到事件");
-  await card.getByRole("button", { name: "管理接入", exact: true }).click();
   await card.getByRole("button", { name: "移除 Codex 接入" }).click();
   await expect(card).toContainText("尚未连接 Codex");
 });
@@ -365,7 +353,7 @@ test("fresh install opens setup and dismissal persists without enabling features
   await page.goto("/");
   await expect(page.getByRole("dialog")).toContainText("开始使用 AhaKey");
   await page.screenshot({ path: "test-results/first-run-setup.png" });
-  await page.getByRole("button", { name: "连接 Codex" }).click();
+  await page.getByRole("button", { name: "连接开发工具" }).click();
   await expect(page.getByRole("region", { name: "Codex 接入" })).toContainText(
     "尚未连接 Codex",
   );
@@ -379,52 +367,7 @@ test("fresh install opens setup and dismissal persists without enabling features
   await expect(page.getByRole("dialog")).toContainText("开始使用 AhaKey");
 });
 
-test("approval mode follows runtime state and saving a binding preserves a later disable", async ({
-  page,
-}) => {
-  await install(page);
-  await page.goto("/");
-  await page.getByRole("button", { name: "AI 编程联动", exact: true }).click();
-  const mode = page.getByRole("radiogroup", { name: "审批方式", exact: true });
-  await expect(
-    mode.getByRole("radio", { name: "关闭", exact: true }),
-  ).toBeChecked();
-  await mode.getByRole("radio", { name: "跟随拨杆", exact: true }).check();
-  expect(
-    await page.evaluate(() => (window as any).featuresTest.calls.at(-1)),
-  ).toMatchObject({
-    method: "hooks.configure",
-    params: { enabled: true, allowAutomatic: true, deviceId: "x1" },
-  });
-  await page.getByText("高级设置与记录", { exact: true }).click();
-  await page
-    .getByLabel("批准 / 拒绝按键来源", { exact: true })
-    .selectOption("hid-1");
-  await page.evaluate(() => (window as any).featuresTest.disableHooks());
-  await expect(
-    mode.getByRole("radio", { name: "关闭", exact: true }),
-  ).toBeChecked();
-  expect(
-    await page.evaluate(() => (window as any).featuresTest.calls),
-  ).toHaveLength(1);
-  await page.getByRole("button", { name: "保存设备设置" }).click();
-  expect(
-    await page.evaluate(() => (window as any).featuresTest.calls.at(-1)),
-  ).toMatchObject({
-    method: "hooks.configure",
-    params: { enabled: false, allowAutomatic: false, inputDeviceId: "hid-1" },
-  });
-  await mode.getByRole("radio", { name: "手动确认", exact: true }).check();
-  await mode.getByRole("radio", { name: "关闭", exact: true }).check();
-  expect(
-    await page.evaluate(() => (window as any).featuresTest.calls.at(-1)),
-  ).toMatchObject({
-    method: "hooks.configure",
-    params: { enabled: false, allowAutomatic: false, inputDeviceId: "hid-1" },
-  });
-});
-
-test("voice, approvals, and setup remain readable through their full scroll areas", async ({
+test("voice and setup remain readable through their full scroll areas", async ({
   page,
 }) => {
   await install(page);
@@ -438,22 +381,11 @@ test("voice, approvals, and setup remain readable through their full scroll area
     .scrollIntoViewIfNeeded();
   await auditLayout(page, "voice-bottom");
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "AI 编程联动", exact: true }).click();
-  await page.getByText("高级设置与记录", { exact: true }).click();
-  await page
-    .getByRole("button", { name: "录入批准键", exact: true })
-    .scrollIntoViewIfNeeded();
-  await auditLayout(page, "hooks-binding");
-  await page
-    .getByRole("button", { name: "生成接入配置", exact: true })
-    .scrollIntoViewIfNeeded();
-  await auditLayout(page, "hooks-tools");
-  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "新手引导", exact: true }).click();
   for (const [index, step] of [
     "连接键盘",
     "语音与权限",
-    "连接 Codex",
+    "连接开发工具",
     "完成",
   ].entries()) {
     await page
@@ -466,6 +398,61 @@ test("voice, approvals, and setup remain readable through their full scroll area
     await page.evaluate(() => (window as any).featuresTest.calls),
   ).toHaveLength(0);
 });
+
+for (const [tool, name] of [
+  ["claude", "Claude Code"],
+  ["cursor", "Cursor"],
+  ["kimi", "Kimi Code"],
+]) {
+  test(`${name} installs independently and keeps other tool state`, async ({
+    page,
+  }) => {
+    await install(page);
+    await page.goto("/");
+    await page.getByRole("button", { name: "新手引导", exact: true }).click();
+    await page
+      .getByRole("button", { name: "连接开发工具", exact: true })
+      .click();
+    await page
+      .getByRole("combobox", { name: "开发工具", exact: true })
+      .selectOption(tool);
+    const card = page.getByRole("region", {
+      name: `${name} 接入`,
+      exact: true,
+    });
+    await expect(card).toContainText(`尚未连接 ${name}`);
+    await card
+      .getByRole("button", { name: `连接 ${name}`, exact: true })
+      .click();
+    await expect(card).toContainText(`/fixture/.${tool}/`);
+    await card
+      .getByRole("button", { name: `确认连接 ${name}`, exact: true })
+      .click();
+    await expect(card).toContainText("已接入，联动关闭");
+    if (tool === "kimi")
+      await expect(card).toContainText("批准操作仍在 Kimi 中完成");
+    await auditLayout(page, `integration-${tool}`);
+    await page
+      .getByRole("combobox", { name: "开发工具", exact: true })
+      .selectOption("codex");
+    await expect(
+      page.getByRole("region", { name: "Codex 接入", exact: true }),
+    ).toContainText("尚未连接 Codex");
+    await page
+      .getByRole("combobox", { name: "开发工具", exact: true })
+      .selectOption(tool);
+    await expect(card).toContainText("已接入，联动关闭");
+    await card
+      .getByRole("button", { name: `移除 ${name} 接入`, exact: true })
+      .click();
+    await expect(card).toContainText(`尚未连接 ${name}`);
+    const calls = await page.evaluate(() => (window as any).featuresTest.calls);
+    expect(calls).toEqual([
+      { command: "tool_integration", tool, action: "install" },
+      { command: "tool_integration", tool, action: "remove" },
+    ]);
+  });
+}
 
 test("unsaved voice preferences retain the window until saved", async ({
   page,

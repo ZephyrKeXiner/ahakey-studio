@@ -32,6 +32,6 @@
     "allow-runtime-voice",
     "allow-runtime-hooks",
     "allow-runtime-hook-config",
-    "allow-codex-integration"
+    "allow-tool-integration"
   ]
 }

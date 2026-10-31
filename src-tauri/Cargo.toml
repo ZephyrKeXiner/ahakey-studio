@@ -29,6 +29,7 @@ uuid = "1"
 fs2 = "0.4"
 libc = "0.2"
 tempfile = "3"
+toml_edit = { version = "0.25", features = ["serde"] }
 
 [profile.release]
 codegen-units = 1

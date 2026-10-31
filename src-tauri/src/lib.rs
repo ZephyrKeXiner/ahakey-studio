@@ -1,4 +1,4 @@
-pub mod codex;
+pub mod integrations;
 pub mod resource_transfer;
 pub mod runtime_client;
 pub mod runtime_session;
@@ -76,7 +76,7 @@ async fn runtime_hooks(
 }
 #[tauri::command]
 async fn runtime_hook_config(tool: String, app: tauri::AppHandle) -> Result<Value, ClientError> {
-    if !["claude", "cursor", "codex"].contains(&tool.as_str()) {
+    if !["claude", "cursor", "codex", "kimi"].contains(&tool.as_str()) {
         return Err(ClientError::new("INVALID_PARAMS", "未知工具。"));
     }
     let binary = std::env::var_os("AHAKEY_RUNTIME_BINARY")
@@ -108,35 +108,43 @@ async fn runtime_hook_config(tool: String, app: tauri::AppHandle) -> Result<Valu
 }
 
 #[tauri::command]
-async fn codex_integration(
-    action: codex::Action,
+async fn tool_integration(
+    tool: integrations::Tool,
+    action: integrations::Action,
     app: tauri::AppHandle,
-) -> Result<codex::Status, ClientError> {
-    let home = std::env::var_os("CODEX_HOME")
+) -> Result<integrations::Status, ClientError> {
+    let user_home = app
+        .path()
+        .home_dir()
+        .map_err(|_| ClientError::new("TOOL_INTEGRATION_ERROR", "无法定位用户目录。"))?;
+    let env = match tool {
+        integrations::Tool::Codex => Some("CODEX_HOME"),
+        integrations::Tool::Claude => Some("CLAUDE_CONFIG_DIR"),
+        _ => None,
+    };
+    let home = env
+        .and_then(std::env::var_os)
         .map(std::path::PathBuf::from)
-        .unwrap_or(
-            app.path()
-                .home_dir()
-                .map_err(|_| ClientError::new("CODEX_INTEGRATION_ERROR", "无法定位用户目录。"))?
-                .join(".codex"),
-        );
-    let integration = codex::Integration {
+        .unwrap_or_else(|| user_home.join(tool.folder()));
+    let integration = integrations::Integration {
+        tool,
         home,
         directory: app
             .path()
             .app_data_dir()
-            .map_err(|_| ClientError::new("CODEX_INTEGRATION_ERROR", "无法定位应用数据目录。"))?
-            .join("integrations/codex"),
+            .map_err(|_| ClientError::new("TOOL_INTEGRATION_ERROR", "无法定位应用数据目录。"))?
+            .join("integrations")
+            .join(tool.id()),
         source: app
             .path()
             .resource_dir()
-            .map_err(|_| ClientError::new("CODEX_INTEGRATION_ERROR", "无法定位随包组件。"))?
+            .map_err(|_| ClientError::new("TOOL_INTEGRATION_ERROR", "无法定位随包组件。"))?
             .join("bin/ahakey-hook"),
         discovery: runtime_client::default_discovery_path()?,
     };
     tauri::async_runtime::spawn_blocking(move || integration.run(action))
         .await
-        .map_err(|_| ClientError::new("CODEX_INTEGRATION_ERROR", "接入操作未完成，请刷新状态。"))?
+        .map_err(|_| ClientError::new("TOOL_INTEGRATION_ERROR", "接入操作未完成，请刷新状态。"))?
 }
 
 #[tauri::command]
@@ -356,7 +364,7 @@ pub fn run() {
             runtime_voice,
             runtime_hooks,
             runtime_hook_config,
-            codex_integration,
+            tool_integration,
             runtime_read_configuration,
             runtime_keymap,
             runtime_patch_configuration,

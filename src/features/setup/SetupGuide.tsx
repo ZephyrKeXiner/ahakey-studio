@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ClientView } from "../../runtime/types";
 import { SystemPanel } from "../system/SystemPanel";
 import { VoicePanel } from "../voice/VoicePanel";
-import { CodexConnection } from "../hooks/CodexConnection";
+import { ToolConnection } from "../hooks/ToolConnection";
 import { ServicePanel } from "../../components/ServicePanel";
 
 export const SETUP_KEY = "ahakey.studio.setup.v1";
@@ -33,7 +33,6 @@ export function SetupGuide({
   const keyboard =
     connected && snapshot?.devices.some((d) => d.connectionState === "ready");
   const voice = connected && snapshot?.voice?.preferences.enabled;
-  const hooks = connected && snapshot?.hooks?.preferences.enabled;
   function finish() {
     rememberSetup();
     onClose();
@@ -41,23 +40,25 @@ export function SetupGuide({
   return (
     <div className="setup-guide">
       <nav className="setup-steps" aria-label="设置步骤">
-        {["连接键盘", "语音与权限", "连接 Codex", "完成"].map((name, index) => (
-          <button
-            key={name}
-            aria-current={step === index ? "step" : undefined}
-            className={step === index ? "primary-button" : "secondary-button"}
-            onClick={() => setStep(index)}
-          >
-            {name}
-          </button>
-        ))}
+        {["连接键盘", "语音与权限", "连接开发工具", "完成"].map(
+          (name, index) => (
+            <button
+              key={name}
+              aria-current={step === index ? "step" : undefined}
+              className={step === index ? "primary-button" : "secondary-button"}
+              onClick={() => setStep(index)}
+            >
+              {name}
+            </button>
+          ),
+        )}
       </nav>
       {step === 0 ? (
         <section className="system-card">
           <h3>{keyboard ? "键盘已连接" : "打开 AhaKey 键盘"}</h3>
           <p>
             {keyboard
-              ? "可以继续设置语音和 Codex。"
+              ? "可以继续设置语音和开发工具。"
               : "保持蓝牙开启，Runtime 会发现并连接键盘。"}
           </p>
           <ServicePanel />
@@ -74,16 +75,14 @@ export function SetupGuide({
           </p>
         </>
       ) : null}
-      {step === 2 ? <CodexConnection runtime={runtime} /> : null}
+      {step === 2 ? <ToolConnection runtime={runtime} /> : null}
       {step === 3 ? (
         <section className="system-card">
           <h3>设置进度</h3>
           <ul>
             <li>键盘：{keyboard ? "已连接" : "等待连接"}</li>
             <li>语音键：{voice ? "已启用" : "尚未启用"}</li>
-            <li>AI 联动：{hooks ? "已启用" : "尚未启用"}</li>
           </ul>
-          <p>重启后自动批准保持关闭，需要重新开启。</p>
           <button className="primary-button" onClick={finish}>
             进入 Studio
           </button>

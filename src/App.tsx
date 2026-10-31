@@ -25,7 +25,6 @@ import type { ClientView, Device } from "./runtime/types";
 import { KeymapPanel } from "./features/keymap/KeymapPanel";
 import { useWorkspace } from "./features/keymap/useWorkspace";
 import { VoicePanel, voiceStatus } from "./features/voice/VoicePanel";
-import { HooksPanel } from "./features/hooks/HooksPanel";
 import {
   SetupGuide,
   needsSetup,
@@ -42,8 +41,6 @@ type Sheet =
   | "welcome"
   | "voice"
   | "firmware"
-  | "hooks"
-  | "lever"
   | "about";
 const sheetTitles: Record<Sheet, string> = {
   device: "设备信息",
@@ -53,8 +50,6 @@ const sheetTitles: Record<Sheet, string> = {
   welcome: "开始使用 AhaKey",
   voice: "语音输入",
   firmware: "固件升级",
-  lever: "AI 编程联动",
-  hooks: "AI 编程联动",
   about: "关于 AhaKey Studio",
 };
 const partIcons: Record<CanvasPart, IconName> = {
@@ -281,16 +276,13 @@ export default function App() {
           </div>
           <button
             className="toolbar-metric lever-metric"
-            onClick={() => openSheet("lever")}
+            onClick={() => openSheet("device")}
           >
             <small>拨杆</small>
             <strong>{leverLabel(online ? device?.lever : null)}</strong>
           </button>
         </div>
         <div className="toolbar-spacer" />
-        <button className="toolbar-button" onClick={() => openSheet("hooks")}>
-          AI 编程联动
-        </button>
         <button className="voice-status" onClick={() => openSheet("voice")}>
           <i className="status-dot gray" />
           <span>
@@ -392,7 +384,7 @@ export default function App() {
           online={online}
           onMode={setMode}
           onSelect={selectPart}
-          onLever={() => openSheet("lever")}
+          onLever={() => openSheet("device")}
         />
         <aside className="studio-inspector" aria-label="配置检查器">
           <div className="inspector-title">
@@ -552,9 +544,6 @@ export default function App() {
               <h3>固件升级尚未接入</h3>
               <p>请使用配套烧录工具更新固件。</p>
             </div>
-          ) : null}
-          {sheet === "lever" || sheet === "hooks" ? (
-            <HooksPanel key={runtime.generation} runtime={runtime} />
           ) : null}
           {sheet === "about" ? (
             <div className="feature-placeholder">

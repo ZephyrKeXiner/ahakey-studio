@@ -133,7 +133,7 @@ export async function installRuntime(
               editable: false,
               mock: true,
             };
-          if (command === "codex_integration" && args.action === "status")
+          if (command === "tool_integration" && args.action === "status")
             return {
               installed: true,
               detected: true,

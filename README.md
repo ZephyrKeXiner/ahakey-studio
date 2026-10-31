@@ -33,7 +33,7 @@ Studio 启动后常驻菜单栏。关闭主窗口会销毁 WebView 并释放页�
 
 后台使用当前 GUI 会话的 launchd job 与独立 supervisor。Runtime 异常退出后以 1、2、4 秒退避，最多自动重启三次；预算用尽后需手动恢复。预算属于本次开机，重启后不会沿用旧故障预算。plist 放在应用数据目录的 `runtime-session` 中，不安装到 `~/Library/LaunchAgents`，电脑重启后不会因登录扫描而自启。
 
-Studio 直接通过 discovery 和认证 WebSocket 对接 Rust Runtime。已运行的外部 Runtime 只附着，不按保存的 PID 关闭；未运行时启动随包 Runtime。启动检查以 Runtime 自身的所有权锁为准。已接入 macOS Apple Speech 语音与 Claude Code／Cursor／Codex Hook。
+Studio 直接通过 discovery 和认证 WebSocket 对接 Rust Runtime。已运行的外部 Runtime 只附着，不按保存的 PID 关闭；未运行时启动随包 Runtime。启动检查以 Runtime 自身的所有权锁为准。已接入 macOS Apple Speech 语音与 Claude Code／Cursor／Codex／Kimi Code Hook。
 
 “系统与权限”中可保存后台输入观察开关，默认关闭。设置在下一次后台启动时生效，保存开关不会重启 Runtime 或中断现有任务；可在同页关闭并重新启动后台来应用。Runtime 通过 `--input-monitor` 启动随包 helper，并管理其生命周期；模拟模式不会启动真实监听。独立启动的 Runtime 仍从原启动来源配置，Studio 不接管它。权限页直接使用 Runtime 的状态，兼容旧版缺少 `snapshot.input` 的情况；不读取 Studio 自身的授权来推断后台是否获准，也不保存按键内容。蓝牙授权尚无 Runtime 查询接口，界面提供系统设置入口，不推断授权结果。
 
@@ -128,27 +128,34 @@ Apache-2.0，见 [LICENSE](LICENSE)。
 
 ### 语音输入与 AI 编程联动
 
-AI 联动页默认只显示审批方式（关闭／手动确认／跟随拨杆）、Codex 接入状态和待处理请求。设备绑定、按键录入、手动 Hook 配置及历史记录收进「高级设置与记录」；已安装的 Codex 接入维护操作默认折叠。打开页面不会更改联动设置。
+独立的“AI 编程联动”页面和顶部入口已移除；拨杆入口打开设备信息。开发工具接入维护位于“新手引导”的“连接开发工具”步骤。
 
 先在相邻 Runtime 仓库运行 `cargo build --bins --locked`，再启动或打包 Studio。原生准备脚本会构建并包含 `AhaKey Speech.app` 和 `ahakey-hook`。
 
 - 语音输入：Apple Speech 实时转写、按住／点击 F18 录音、原生悬浮窗、复制与原输入框自动粘贴。先启用后台输入观察并重启 Runtime，再请求麦克风／语音识别权限，选择当前输入设备并保存。自动粘贴另需辅助功能授权。试录只预览，不自动粘贴。
-- AI 编程联动：生成并手动合并 Claude Code、Cursor 或 Codex 项目 Hook 配置，关联在线键盘后启用。支持工作状态、单次批准／拒绝和实体按键确认；明确开启自动审批后，每次重新查询实体拨杆才决定是否批准。Codex 的 Hook 定义需在工具内审查信任。
+- 开发工具接入：在新手引导中选择工具并安装用户级 Hook。Claude Code、Codex 支持审批请求，Cursor 支持 Shell 和 MCP 审批；Kimi Code 2.x 同步状态，审批仍在 Kimi 中处理。
 - Runtime 重启或设备重连后，根据稳定 HID 身份恢复语音，根据原 BLE 设备及模式恢复手动 AI 联动；无稳定身份的旧输入组件仍需重新选择。自动批准、会话和待审批不恢复。退出 Studio 后 Runtime 继续处理已启用的功能。
-- AhaType 云端整理、云账号、状态驱动硬件灯光、Hook 一键安装／卸载尚未接入。原生真人录音、输入输出、真实工具会话与实体拨杆仍需验收；UI 测试使用模拟数据。
+- AhaType 云端整理、云账号、状态驱动硬件灯光尚未接入。原生真人录音、输入输出、真实工具会话与实体拨杆仍需验收；UI 测试使用模拟数据。
 
 详细契约与验收清单见 [语音与 Hook](../ahakey-runtime-rust/docs/voice-and-hooks.md)。
 
 
-## 首次启动与 Codex 一键接入（2026-10-30）
+## 开发工具接入
 
-首次打开显示「连接键盘 → 语音与权限 → 连接 Codex → 完成」。可以跳过并在底部「新手引导」重新打开；完成页分别显示功能状态，不把跳过当成已授权。
+新手引导的“连接开发工具”步骤提供一个工具选择器，以及安装、修复、移除操作。配置按工具分开保存，只有安装后收到的对应工具事件才显示“已收到事件”。
 
-「AI 编程联动」中的「连接 Codex」会先显示范围、事件及上报内容。确认后由原生端合并当前用户的 `CODEX_HOME/hooks.json`（默认 `~/.codex/hooks.json`），备份原内容、保留其他 Hook。组件复制到应用数据目录 `integrations/codex/ahakey-hook`，配置不引用开发构建路径，也不包含认证 token。更新组件后通过「修复接入」更新该固定路径。
+| 工具 | 用户配置 | 联动范围 |
+| --- | --- | --- |
+| Codex | `$CODEX_HOME/hooks.json`，默认 `~/.codex/hooks.json` | 会话、工具调用、审批、完成 |
+| Claude Code | `$CLAUDE_CONFIG_DIR/settings.json`，默认 `~/.claude/settings.json` | 会话、工具调用、审批、完成 |
+| Cursor | `~/.cursor/hooks.json` | 会话、工具结果、Shell 和 MCP 审批、完成 |
+| Kimi Code 2.x | `~/.kimi-code/config.toml` | 会话、工具调用、审批状态、完成、中断；不代替用户批准 |
 
-安装记录仅用于识别 Studio 自己的条目；移除只删除精确匹配的条目，用户修改过的条目保留。无效 JSON 或符号链接配置会显示错误并保留原文件。安装、修复和移除均不修改 Codex 的权限策略或信任记录。
+安装前显示目标路径和范围。安装会备份原文件，保留原设置和其他 Hook；Kimi TOML 保留注释。组件保存在应用数据目录 `integrations/<tool>/ahakey-hook`，更新后通过“修复接入”同步组件。Codex 沿用已有接入目录和安装记录。
 
-安装成功显示「配置已安装」，在 Codex CLI `/hooks` 信任当前定义后，开始新会话。只有安装后收到的 Codex 事件才显示「已收到 Codex 事件」，这表示收到过事件，不代表持续探测工具存活。恢复 AI 联动后自动批准始终关闭。
+移除只删除安装记录中精确匹配的条目，用户改过的条目保留。接入安装不更改工具的权限模式或信任记录。Codex 和 Claude Code 可在 `/hooks` 检查定义；Cursor 在设置中检查 Hooks；安装后开始新会话。
+
+参考旧版 `AhakeyAI-desktop/ahakeyconfig-mac/Sources/Utilities/AgentManager.swift` 的工具范围，协议按当前官方文档核对：[Claude Code](https://code.claude.com/docs/en/hooks)、[Cursor](https://cursor.com/docs/hooks)、[Kimi Code](https://www.kimi.com/code/docs/en/kimi-code-cli/customization/hooks.html)。Kimi 的 `PermissionRequest` 是观察事件；Cursor 使用可返回 `ask` 的 Shell/MCP 事件，避免把 `preToolUse` 当成可交还人工审批的接口。
 
 本地调试包支持 Developer ID 证书签名；公开分发仍需带时间戳的发布构建及公证。登录启动尚未实现，电脑重启后打开 Studio 会启动后台。
 
@@ -170,4 +177,4 @@ AI 联动页默认只显示审批方式（关闭／手动确认／跟随拨杆�
 
 所有页面使用系统字体，字号限定为 12、13、16、20px。普通状态用文字呈现，分组使用留白，结构分隔使用 0.5px 细线。仅弹窗保留一层阴影；不使用渐变、背景模糊、装饰眉标或中圆点分隔。下拉框保留原生键盘操作，隐藏箭头；审批方式使用单选项。维护操作和诊断标识按需展开。
 
-`tests/ui/design.spec.ts` 与各功能页的视觉检查覆盖主界面、设备、权限、任务、帮助、语音、AI 联动、新手引导及上传/裁剪弹窗；检查字号、横向溢出，并生成截图供复核。
+`tests/ui/design.spec.ts` 与各功能页的视觉检查覆盖主界面、设备、权限、任务、帮助、语音、新手引导及上传/裁剪弹窗；检查字号、横向溢出，并生成截图供复核。

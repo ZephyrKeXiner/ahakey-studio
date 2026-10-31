@@ -32,7 +32,6 @@ test("all workspace pages use readable type and fit the desktop viewport", async
     ["设备信息", "device"],
     ["系统与权限", "system"],
     ["任务记录", "tasks"],
-    ["AI 编程联动", "hooks"],
   ]) {
     await page.getByRole("button", { name: button, exact: true }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -47,7 +46,7 @@ test("all workspace pages use readable type and fit the desktop viewport", async
     "LCD 屏幕",
     "任务与恢复",
     "权限诊断",
-    "语音与审批",
+    "语音输入",
   ].entries()) {
     await page
       .getByRole("dialog")

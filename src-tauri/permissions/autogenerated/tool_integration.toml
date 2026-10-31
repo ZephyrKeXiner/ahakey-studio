@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-tool-integration"
+description = "Enables the tool_integration command without any pre-configured scope."
+commands.allow = ["tool_integration"]
+
+[[permission]]
+identifier = "deny-tool-integration"
+description = "Denies the tool_integration command without any pre-configured scope."
+commands.deny = ["tool_integration"]

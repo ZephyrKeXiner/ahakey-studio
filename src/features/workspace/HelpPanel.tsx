@@ -52,11 +52,10 @@ const topics: { title: string; icon: IconName; paragraphs: string[] }[] = [
     ],
   },
   {
-    title: "语音与审批",
+    title: "语音输入",
     icon: "microphone",
     paragraphs: [
       "在“语音输入”中授权并选择输入设备。Voice 键需发送 F18，支持按住或点击录音。",
-      "在“AI 编程联动”中连接 Codex，再选择手动确认或跟随拨杆。跟随拨杆时，自动档会自动批准收到的工具请求。",
     ],
   },
 ];

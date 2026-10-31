@@ -223,23 +223,24 @@ export function hooksRequest(
   requireDesktop();
   return invoke("runtime_hooks", { generation, method, params });
 }
-export function hookConfig(
-  tool: "claude" | "cursor" | "codex",
-): Promise<unknown> {
+export function hookConfig(tool: DeveloperTool): Promise<unknown> {
   requireDesktop();
   return invoke("runtime_hook_config", { tool });
 }
 
-export interface CodexIntegrationStatus {
+export type DeveloperTool = "codex" | "claude" | "cursor" | "kimi";
+
+export interface ToolIntegrationStatus {
   installed: boolean;
   needsRepair: boolean;
   configPath: string;
   detected: boolean;
   installedAtMs: number;
 }
-export function codexIntegration(
+export function toolIntegration(
+  tool: DeveloperTool,
   action: "status" | "install" | "remove",
-): Promise<CodexIntegrationStatus> {
+): Promise<ToolIntegrationStatus> {
   requireDesktop();
-  return invoke("codex_integration", { action });
+  return invoke("tool_integration", { tool, action });
 }
