@@ -295,13 +295,8 @@ export function ActionEditor({
           >
             ＋ 添加步骤
           </button>
-          <p className="field-hint">
-            按下与松开使用 HID 键码；延时为 3 毫秒的倍数。
-          </p>
+          <p className="field-hint">延时以 3 毫秒递增。</p>
         </div>
-      ) : null}
-      {action?.type === "disabled" ? (
-        <p className="field-hint">写入后，这个键位在当前模式下不执行动作。</p>
       ) : null}
       {error ? (
         <p className="inline-error" role="alert">

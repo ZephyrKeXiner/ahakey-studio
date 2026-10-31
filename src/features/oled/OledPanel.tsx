@@ -315,7 +315,7 @@ export function OledPanel({
           <h2>{draft?.filename ?? "选择屏幕素材"}</h2>
           <p>
             {draft
-              ? `${draft.resource.frameCount} 帧，100 毫秒 / 帧，160 × 80 像素`
+              ? `${draft.resource.frameCount} 帧，160 × 80 像素`
               : "PNG、JPEG 或 GIF，最大 2 MiB。"}
           </p>
           <label
@@ -333,9 +333,6 @@ export function OledPanel({
               }}
             />
           </label>
-          <p className="field-hint">
-            GIF：160 × 80，100 毫秒帧间隔，无限循环。透明区域显示为黑色。
-          </p>
         </article>
         <article className="oled-target">
           <div className="inspector-heading">
@@ -402,7 +399,6 @@ export function OledPanel({
               {entry!.maxFrames} 帧。
             </p>
           ) : null}
-          <p className="field-hint">预览来自本地文件，设备暂不支持导出原图。</p>
         </article>
       </div>
       {composer ? (

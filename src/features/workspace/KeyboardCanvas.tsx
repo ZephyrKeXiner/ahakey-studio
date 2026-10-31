@@ -85,7 +85,6 @@ export function KeyboardCanvas({
           ))}
         </div>
       </div>
-      <p className="mode-caption">{modeNames[mode]} 模式</p>
       <div className="keyboard-stage">
         <div className="keyboard-board" aria-label="AhaKey X1 配置示意图">
           <button

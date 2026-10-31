@@ -123,17 +123,9 @@ function Connection({
         <h3>连接 {name}</h3>
         <span>{label}</span>
       </div>
-      <p>
-        {tool === "kimi"
-          ? "Kimi Code 2.x 支持任务和审批状态同步，批准操作仍在 Kimi 中完成。"
-          : tool === "cursor"
-            ? "同步任务状态，接收 Shell 和 MCP 审批请求。"
-            : "同步任务状态和审批请求。"}
-      </p>
+      {tool === "kimi" ? <p>批准操作仍在 Kimi 中完成。</p> : null}
       {status && !status.detected ? (
-        <p className="field-hint">
-          尚未检测到 {name} 用户配置，请先启动该工具。
-        </p>
+        <p className="field-hint">请先启动 {name}，创建用户配置。</p>
       ) : null}
       {status?.installed ? (
         <>

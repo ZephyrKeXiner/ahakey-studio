@@ -216,7 +216,6 @@ export function KeymapPanel({
       <div className="page-heading">
         <div>
           <h1>键位编辑</h1>
-          <p>{device.name}，修改当前模式中的指定键位。</p>
         </div>
         <button
           className="primary-button"
@@ -340,9 +339,6 @@ export function KeymapPanel({
               </div>
             </>
           ) : null}
-          {selected === 0 ? (
-            <p className="field-hint">Voice 录音在“语音输入”中设置。</p>
-          ) : null}
           {deviceDraft?.history.length ? (
             <button
               className="text-button"
@@ -352,12 +348,6 @@ export function KeymapPanel({
             >
               恢复上次同步前的草稿
             </button>
-          ) : null}
-          {deviceDraft?.synchronizedAt ? (
-            <p className="field-hint">
-              上次更新设备键位：
-              {new Date(deviceDraft.synchronizedAt).toLocaleString("zh-CN")}
-            </p>
           ) : null}
         </div>
         <article className="key-inspector">

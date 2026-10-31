@@ -49,14 +49,12 @@ export function SystemPanel({ runtime }: { runtime: ClientView }) {
       <div className="page-heading">
         <div>
           <h1>系统与权限</h1>
-          <p>查看后台上报的状态，处理 macOS 的连接权限。</p>
         </div>
       </div>
       <div className="system-card">
         <div className="section-heading">
           <h2>蓝牙连接</h2>
         </div>
-        <p>在 macOS 蓝牙权限中允许 AhaKey 后台组件。</p>
         <button
           className="secondary-button"
           disabled={!desktop || busy !== null}
@@ -84,12 +82,6 @@ export function SystemPanel({ runtime }: { runtime: ClientView }) {
               ? (inputStatuses[input.status] ?? "暂不识别此状态")
               : "当前 Runtime 未提供输入状态"}
         </h3>
-        <p>用于识别 Voice 和审批按键。</p>
-        {input?.status === "disabled" ? (
-          <p className="inline-notice">
-            当前后台未启用输入观察。只编辑键位或上传画面无需开启这项权限。
-          </p>
-        ) : null}
         {input?.status === "permissionRequired" ||
         input?.status === "permissionDenied" ? (
           <p className="inline-notice">

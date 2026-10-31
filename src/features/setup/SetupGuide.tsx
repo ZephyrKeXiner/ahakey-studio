@@ -56,11 +56,7 @@ export function SetupGuide({
       {step === 0 ? (
         <section className="system-card">
           <h3>{keyboard ? "键盘已连接" : "打开 AhaKey 键盘"}</h3>
-          <p>
-            {keyboard
-              ? "可以继续设置语音和开发工具。"
-              : "保持蓝牙开启，Runtime 会发现并连接键盘。"}
-          </p>
+          {!keyboard ? <p>开启键盘与蓝牙，等待连接。</p> : null}
           <ServicePanel />
         </section>
       ) : null}
@@ -68,11 +64,6 @@ export function SetupGuide({
         <>
           <SystemPanel runtime={runtime} />
           <VoicePanel key={runtime.generation} runtime={runtime} />
-          <p className="field-hint">
-            输入监控授权给系统显示的 AhaKey
-            后台组件；启用监听后如提示需要重启后台，请先结束录音和设备任务。Voice
-            键应发送 F18。
-          </p>
         </>
       ) : null}
       {step === 2 ? <ToolConnection runtime={runtime} /> : null}

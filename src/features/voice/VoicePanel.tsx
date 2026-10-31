@@ -203,9 +203,7 @@ export function VoicePanel({ runtime }: { runtime: ClientView }) {
             复制结果
           </button>
         </div>
-        <p className="field-hint">
-          试录仅预览，不自动输入。单次录音最多 120 秒。
-        </p>
+        <p className="field-hint">仅预览，最长 120 秒。</p>
         <textarea
           aria-label="语音转写结果"
           readOnly
@@ -235,9 +233,7 @@ export function VoicePanel({ runtime }: { runtime: ClientView }) {
             )}
           </select>
         </label>
-        <p className="field-hint">
-          先在“系统与权限”启用后台输入监听。Voice 键需发送 F18。
-        </p>
+        <p className="field-hint">Voice 键需设为 F18。</p>
         <label>
           录音方式
           <select

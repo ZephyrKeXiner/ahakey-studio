@@ -78,13 +78,16 @@ export function ServicePanel() {
             {status ? (phases[status.phase] ?? status.phase) : "检查中"}
           </span>
         </h2>
-        <p>
-          {status?.message ?? "正在核对后台服务。"}
-          {status && status.restarts > 0
-            ? ` 已自动恢复 ${status.restarts} / 3 次。`
-            : ""}
-        </p>
-        <p className="field-hint">关闭 Studio 后继续运行。</p>
+        {status &&
+        (!["running", "external"].includes(status.phase) ||
+          status.restarts > 0) ? (
+          <p>
+            {status.message}
+            {status.restarts > 0
+              ? ` 已自动恢复 ${status.restarts} / 3 次。`
+              : ""}
+          </p>
+        ) : null}
         {error ? (
           <p className="inline-error" role="alert">
             {error}

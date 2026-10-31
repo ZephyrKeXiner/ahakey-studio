@@ -147,7 +147,7 @@ function DeviceDetails({
                 : "断开设备"}
           </button>
         ) : (
-          <p>请打开键盘并保持蓝牙可用，设备状态会自动更新。</p>
+          <p>开启键盘与蓝牙，等待连接。</p>
         )}
         {error ? (
           <p className="inline-error" role="alert">
@@ -470,7 +470,7 @@ export default function App() {
                   <StudioIcon name="keyboard" size={36} />
                 </span>
                 <h3>连接你的 AhaKey</h3>
-                <p>打开键盘，连接后即可读取配置、编辑按键和上传屏幕画面。</p>
+                <p>开启键盘与蓝牙，等待连接。</p>
                 <button
                   className="primary-button"
                   onClick={() => openSheet("device")}

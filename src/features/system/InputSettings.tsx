@@ -72,22 +72,16 @@ export function InputSettings() {
         <p>当前后台独立运行，请在启动来源更改设置。</p>
       ) : (
         <>
-          <p>下次启动后台时生效，需要 macOS 输入监控权限。</p>
           {!settings.available ? (
             <p className="inline-error">
               缺少配套输入组件，请准备原生组件或安装完整应用。
             </p>
           ) : null}
           {settings.active !== null && settings.active !== settings.enabled ? (
-            <p className="inline-notice">
-              已保存，等待下次后台启动。待任务结束后，可在下方关闭并重新启动
-              Runtime；当前任务会继续。
-            </p>
+            <p className="inline-notice">已保存，等待下次后台启动。</p>
           ) : null}
           {settings.mock ? (
-            <p className="field-hint">
-              当前为模拟设备模式，不会启动真实输入监听。
-            </p>
+            <p className="field-hint">模拟模式，不启用输入监听。</p>
           ) : null}
         </>
       )}

@@ -212,10 +212,13 @@ export function SettingsPanel({
     const state = draft?.fields[id];
     const value = state?.value ?? null;
     const validation = state?.dirty ? validateField(id, value) : null;
+    const showObserved = state?.dirty && current && value !== observed[id];
     return (
       <div className="settings-field" key={id}>
         <label htmlFor={`field-${id}`}>
-          {fieldLabel(id)}
+          {id === "brightness"
+            ? "全局亮度"
+            : roleNames[Number(id.split(":")[2])]}
           <span className="badge">
             {state?.dirty ? "未写入" : value === null ? "未知" : "已同步"}
           </span>
@@ -236,7 +239,9 @@ export function SettingsPanel({
                 : "空描述"
           }
           aria-invalid={!!validation}
-          aria-describedby={`hint-${id}`}
+          aria-describedby={
+            validation || showObserved ? `hint-${id}` : undefined
+          }
           onChange={(event) => {
             const value: FieldValue =
               id === "brightness"
@@ -247,21 +252,24 @@ export function SettingsPanel({
             update((state) => editField(state, device.deviceId, id, value));
           }}
         />
-        <p
-          id={`hint-${id}`}
-          className={validation ? "inline-error" : "field-hint"}
-        >
-          {validation ??
-            `设备当前值：${current ? formatField(observed[id] ?? null, id) : "待更新"}`}
-        </p>
+        {validation || showObserved ? (
+          <p
+            id={`hint-${id}`}
+            className={validation ? "inline-error" : "field-hint"}
+          >
+            {validation ??
+              `设备当前值：${formatField(observed[id] ?? null, id)}`}
+          </p>
+        ) : null}
         {id !== "brightness" ? (
           <button
             className="text-button"
+            aria-label={`清空${roleNames[Number(id.split(":")[2])]}描述`}
             onClick={() =>
               update((state) => editField(state, device.deviceId, id, ""))
             }
           >
-            清空{roleNames[Number(id.split(":")[2])]}描述
+            清空
           </button>
         ) : null}
       </div>
@@ -274,7 +282,6 @@ export function SettingsPanel({
       <div className="page-heading">
         <div>
           <h1>亮度与描述</h1>
-          <p>{device.name}，只提交明确修改的项目。</p>
         </div>
         <button
           className="primary-button"
@@ -355,7 +362,6 @@ export function SettingsPanel({
         </p>
       ) : null}
       <article className="system-card brightness-card">
-        <h2>全局亮度</h2>
         {field("brightness")}
       </article>
       {selectedMode === undefined ? (
@@ -380,7 +386,7 @@ export function SettingsPanel({
       ) : null}
       <article className="system-card">
         <h2>按键描述</h2>
-        <p>最多 20 个 ASCII 字符，留空可清除描述。</p>
+        <p>最多 20 个 ASCII 字符。</p>
         <div className="settings-grid">
           {[0, 1, 2, 3].map((index) => field(descriptionId(mode, index)))}
         </div>
