@@ -96,33 +96,32 @@ export function editAction(
     },
   };
 }
-export function syncDevice(
+export function refreshDevice(
   workspace: Workspace,
   document: ConfigurationDocument,
   now: string,
 ): Workspace {
+  // A full read temporarily invalidates the cache. Keep the displayed baseline
+  // until the result arrives, and always preserve edits made while it was reading.
+  if (document.read?.status === "reading") return workspace;
   const device = workspace.devices[document.deviceId] ?? emptyDevice();
-  const keys: Record<string, DraftKey> = {};
+  const keys = { ...device.keys };
   let counter = device.counter;
   for (let mode = 0; mode < 4; mode++)
     for (let index = 0; index < 4; index++) {
-      keys[keyId(mode, index)] = {
-        action: observedAction(document, mode, index),
-        revision: ++counter,
-        dirty: false,
-      };
+      const id = keyId(mode, index);
+      const current = keys[id];
+      if (current?.dirty) continue;
+      const action = observedAction(document, mode, index);
+      if (current && sameAction(current.action, action)) continue;
+      keys[id] = { action, revision: ++counter, dirty: false };
     }
-  const history = Object.values(device.keys).some((key) => key.dirty)
-    ? [
-        { savedAt: now, keys: structuredClone(device.keys) },
-        ...device.history,
-      ].slice(0, 5)
-    : device.history;
+  if (counter === device.counter) return workspace;
   return {
     ...workspace,
     devices: {
       ...workspace.devices,
-      [document.deviceId]: { keys, counter, synchronizedAt: now, history },
+      [document.deviceId]: { ...device, keys, counter, synchronizedAt: now },
     },
   };
 }

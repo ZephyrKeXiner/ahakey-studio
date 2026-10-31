@@ -1,5 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { installRuntime } from "./support/runtime-fixture";
+// Existing-user workspace fixture; first-install behavior is covered separately.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("ahakey.studio.setup.v1", "seen"),
+  );
+});
+
+import { installRuntime, type Harness } from "./support/runtime-fixture";
 
 test("canvas selection shares the mode and key with the editor without writing on navigation", async ({
   page,
@@ -10,10 +17,6 @@ test("canvas selection shares the mode and key with the editor without writing o
   await expect(
     page.getByRole("tab", { name: "Claude", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
-  await page.getByRole("button", { name: "同步到编辑区", exact: true }).click();
-  await page
-    .getByRole("button", { name: "保存草稿并同步", exact: true })
-    .click();
   await page.screenshot({ path: "test-results/native-workspace.png" });
   await page.getByRole("tab", { name: "Claude", exact: true }).focus();
   await page.keyboard.press("ArrowRight");
@@ -40,7 +43,7 @@ test("canvas selection shares the mode and key with the editor without writing o
   expect(
     await page.evaluate(() => (window as any).studioTest.requests),
   ).toHaveLength(0);
-  await page.getByRole("button", { name: "写入修改 · 1", exact: true }).click();
+  await page.getByRole("button", { name: "写入修改，1", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText(
     "写入模式 2 的 1 个键位",
   );
@@ -74,8 +77,12 @@ test("help, capability notices and keyboard access work without a Runtime", asyn
   await page.keyboard.press("Escape");
   await expect(help).not.toBeVisible();
   await page.getByRole("button", { name: /^语音输入/ }).click();
-  await expect(page.getByRole("dialog")).toContainText("请连接支持语音输入的新版 Runtime");
-  await expect(page.getByRole("textbox", { name: "语音转写结果" })).toHaveValue("");
+  await expect(page.getByRole("dialog")).toContainText(
+    "请连接支持语音输入的新版 Runtime",
+  );
+  await expect(page.getByRole("textbox", { name: "语音转写结果" })).toHaveValue(
+    "",
+  );
   await page.keyboard.press("Escape");
   await page.getByLabel("更多菜单", { exact: true }).click();
   await page.getByRole("button", { name: /固件升级/ }).click();
@@ -106,4 +113,46 @@ test("canvas and inspector fit the minimum desktop width", async ({ page }) => {
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(900);
   await page.screenshot({ path: "test-results/native-compact.png" });
+});
+
+test("editor follows hardware mode changes and reconnect while preserving per-mode drafts", async ({
+  page,
+}) => {
+  await installRuntime(page, false, 2);
+  await page.goto("/");
+  const tab = (name: string) => page.getByRole("tab", { name, exact: true });
+  const key = page.getByRole("combobox", { name: "按键", exact: true });
+  const update = (patch: Parameters<Harness["updateDevice"]>[0]) =>
+    page.evaluate(
+      (patch) =>
+        (window as unknown as { studioTest: Harness }).studioTest.updateDevice(
+          patch,
+        ),
+      patch,
+    );
+  await expect(tab("Codex")).toHaveAttribute("aria-selected", "true");
+  await tab("Cursor").click();
+  await key.selectOption("5");
+  await update({ batteryPercent: 76, lever: "automatic" });
+  await expect(tab("Cursor")).toHaveAttribute("aria-selected", "true");
+  await update({ workMode: 3 });
+  await expect(tab("custom")).toHaveAttribute("aria-selected", "true");
+  await expect(
+    page.getByRole("complementary", { name: "配置检查器" }),
+  ).toContainText("custom · Mode 4");
+  await update({ workMode: 1 });
+  await expect(tab("Cursor")).toHaveAttribute("aria-selected", "true");
+  await expect(key).toHaveValue("5");
+  await expect(page.locator(".inspector-heading")).toContainText("未写入");
+  await update({ connectionState: "disconnected", workMode: null });
+  await expect(tab("Cursor")).toHaveAttribute("aria-selected", "true");
+  await update({ connectionState: "ready", workMode: 2 });
+  await expect(tab("Codex")).toHaveAttribute("aria-selected", "true");
+  await tab("Cursor").click();
+  await expect(key).toHaveValue("5");
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { studioTest: Harness }).studioTest.requests,
+    ),
+  ).toEqual([]);
 });

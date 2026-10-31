@@ -1,6 +1,7 @@
 import { type Page } from "@playwright/test";
 import type {
   ClientView,
+  Device,
   ConfigurationDocument,
   KeymapRequest,
   Operation,
@@ -10,10 +11,16 @@ export type Harness = {
   requests: KeymapRequest[];
   complete(): void;
   disconnect(): void;
+  finishRead(): void;
+  updateDevice(patch: Partial<Device>): void;
 };
-export async function installRuntime(page: Page, partial = false) {
+export async function installRuntime(
+  page: Page,
+  partial = false,
+  initialMode = 0,
+) {
   await page.addInitScript(
-    ({ partial }) => {
+    ({ partial, initialMode }) => {
       const w = window as unknown as {
         isTauri: boolean;
         __TAURI_INTERNALS__: unknown;
@@ -76,7 +83,12 @@ export async function installRuntime(page: Page, partial = false) {
           instanceId: "test-runtime",
           runtimeVersion: "0.1.0",
           protocol: { major: 1, minor: 0 },
-          methods: ["configuration.get", "keymap.apply", "operation.get"],
+          methods: [
+            "configuration.get",
+            "configuration.read",
+            "keymap.apply",
+            "operation.get",
+          ],
           snapshot: {
             instanceId: "test-runtime",
             sequence: "0",
@@ -86,7 +98,7 @@ export async function installRuntime(page: Page, partial = false) {
                 name: "AhaKey X1 (UI fixture)",
                 connectionState: "ready",
                 batteryPercent: 80,
-                workMode: 0,
+                workMode: initialMode,
                 lever: "up",
               },
             ],
@@ -109,6 +121,22 @@ export async function installRuntime(page: Page, partial = false) {
         transformCallback: () => ++callback,
         unregisterCallback: () => {},
         invoke: async (command: string, args: any) => {
+          if (command === "runtime_input_settings")
+            return {
+              enabled: false,
+              active: false,
+              available: true,
+              editable: false,
+              mock: true,
+            };
+          if (command === "codex_integration" && args.action === "status")
+            return {
+              installed: true,
+              detected: true,
+              needsRepair: false,
+              installedAtMs: 1,
+              configPath: "/fixture/.codex/hooks.json",
+            };
           if (command === "runtime_service_status")
             return {
               phase: "external",
@@ -125,6 +153,22 @@ export async function installRuntime(page: Page, partial = false) {
           if (command === "runtime_unwatch") {
             listeners.delete(args.listenerId);
             return;
+          }
+          if (command === "runtime_read_configuration") {
+            state.document = {
+              deviceId: "mock-x1",
+              baseToken: "reading",
+              configuration: null,
+              read: {
+                status: "reading",
+                attempt: 1,
+                maxAttempts: 3,
+                errorCode: null,
+              },
+            };
+            view.configurationEpochs["mock-x1"] = "reading";
+            publish();
+            return state.document.read;
           }
           if (command === "runtime_configuration")
             return structuredClone(state.document);
@@ -179,12 +223,39 @@ export async function installRuntime(page: Page, partial = false) {
           view.configurationEpochs["mock-x1"] = "1";
           publish();
         },
+        finishRead() {
+          state.document = {
+            ...initial,
+            read: {
+              status: "completed",
+              attempt: 1,
+              maxAttempts: 3,
+              errorCode: null,
+            },
+            readback: {
+              modes: [0, 1, 2, 3].map((mode) => ({
+                mode,
+                keys: roles.map((role) => ({
+                  role,
+                  description: null,
+                  action: { type: "shortcut", modifiers: [], keyCode: 7 },
+                })),
+              })),
+            },
+          };
+          view.configurationEpochs["mock-x1"] = "read-completed";
+          publish();
+        },
+        updateDevice(patch) {
+          Object.assign(view.inspection!.snapshot.devices[0], patch);
+          publish();
+        },
         disconnect() {
           view.status = "reconnecting";
           publish();
         },
       };
     },
-    { partial },
+    { partial, initialMode },
   );
 }

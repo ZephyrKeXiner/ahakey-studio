@@ -184,6 +184,22 @@ export default function App() {
     devices.find((item) => item.deviceId === selectedId) ?? devices[0];
   const online = runtime.status === "connected";
   const ready = online && device?.connectionState === "ready";
+  const deviceId = device?.deviceId;
+  const hardwareMode = device?.workMode;
+  useEffect(() => {
+    if (
+      ready &&
+      hardwareMode != null &&
+      Number.isInteger(hardwareMode) &&
+      hardwareMode >= 0 &&
+      hardwareMode < modeNames.length
+    ) {
+      setMode(hardwareMode);
+    }
+    // Follow actual mode changes and reconnections, not battery/lever updates.
+    // Manual tab selection remains available between hardware mode changes.
+  }, [ready, deviceId, hardwareMode, runtime.generation]);
+
   const dirty =
     Object.values(
       controller.workspace.devices[device?.deviceId ?? ""]?.keys ?? {},

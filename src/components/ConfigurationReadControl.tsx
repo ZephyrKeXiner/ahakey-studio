@@ -8,12 +8,14 @@ export function ConfigurationReadControl({
   document,
   disabled,
   onRefresh,
+  readbackMessage = "读回完成，请同步到编辑区。",
 }: {
   runtime: ClientView;
   deviceId: string;
   document: ConfigurationDocument | null;
   disabled: boolean;
   onRefresh: () => Promise<void>;
+  readbackMessage?: string;
 }) {
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,16 +53,18 @@ export function ConfigurationReadControl({
       <div>
         <strong>
           {reading
-            ? `正在从设备读取 · 第 ${Math.max(1, read.attempt)} / ${read.maxAttempts} 次`
-            : "设备完整读取"}
+            ? `正在从设备读取，第 ${Math.max(1, read.attempt)} / ${read.maxAttempts} 次`
+            : "设备配置"}
         </strong>
-        <p>
-          {reading
-            ? "正在读取四个模式的键位、描述、灯效和亮度。草稿可继续编辑。"
-            : document?.readback
-              ? "当前值来自设备读回；同步到编辑区仍需确认。"
-              : "当前显示 Runtime 已知值。完整读取会重新查询键盘，无法读取的项目保持未知。"}
-        </p>
+        {!document?.readback || reading || readbackMessage ? (
+          <p>
+            {reading
+              ? "正在读取四个模式…"
+              : document?.readback
+                ? readbackMessage
+                : "尚未读取完整配置。"}
+          </p>
+        ) : null}
         {!supported ? (
           <p>当前 Runtime 未提供设备读取入口，请更新配套 Runtime。</p>
         ) : null}

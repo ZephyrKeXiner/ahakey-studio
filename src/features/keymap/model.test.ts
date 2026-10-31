@@ -14,7 +14,7 @@ import {
   reconcileTask,
   restoreDraft,
   retainTask,
-  syncDevice,
+  refreshDevice,
   validateAction,
 } from "./model";
 
@@ -55,7 +55,7 @@ function pending() {
 }
 describe("keymap revisions and durable task identity", () => {
   it("keeps unobserved keys unknown when syncing a partial read", () => {
-    const next = syncDevice(emptyWorkspace(), document, "now");
+    const next = refreshDevice(emptyWorkspace(), document, "now");
     expect(next.devices["x1-test"].keys[keyId(0, 0)].action).toEqual(
       shortcut(4),
     );
@@ -116,10 +116,37 @@ describe("keymap revisions and durable task identity", () => {
       ].keys["0:0"].dirty,
     ).toBe(true);
   });
-  it("backs up an unsaved draft before sync and restores it without submitting writes", () => {
+  it("refreshes clean keys while retaining dirty revisions and pending requests", () => {
+    const before = pending();
+    const next = refreshDevice(before, document, "now");
+    expect(next.devices["x1-test"].keys["0:0"]).toEqual(
+      before.devices["x1-test"].keys["0:0"],
+    );
+    expect(next.tasks).toBe(before.tasks);
+    expect(next.devices["x1-test"].keys["0:1"].action).toBeNull();
+    expect(refreshDevice(next, document, "later")).toBe(next);
+    const acknowledged = reconcileTask(next, completed);
+    const refreshed = refreshDevice(acknowledged, document, "later");
+    expect(refreshed.devices["x1-test"].keys["0:0"]).toMatchObject({
+      action: shortcut(4),
+      dirty: false,
+    });
+  });
+  it("keeps the last displayed baseline while a hardware read is in progress", () => {
+    const before = refreshDevice(emptyWorkspace(), document, "now");
+    const reading: ConfigurationDocument = {
+      ...document,
+      readback: undefined,
+      read: { status: "reading", attempt: 1, maxAttempts: 3, errorCode: null },
+    };
+    expect(refreshDevice(before, reading, "later")).toBe(before);
+  });
+  it("can still restore a draft saved by an older Studio version", () => {
     const before = editAction(emptyWorkspace(), "x1-test", 0, 0, shortcut(6));
-    const synced = syncDevice(before, document, "now");
-    expect(synced.devices["x1-test"].history).toHaveLength(1);
+    const synced = refreshDevice(emptyWorkspace(), document, "now");
+    synced.devices["x1-test"].history = [
+      { savedAt: "before", keys: before.devices["x1-test"].keys },
+    ];
     const restored = restoreDraft(synced, "x1-test");
     expect(restored.devices["x1-test"].keys["0:0"]).toMatchObject({
       action: shortcut(6),

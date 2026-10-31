@@ -23,7 +23,7 @@ import {
   restoreDraft,
   retainTask,
   roleNames,
-  syncDevice,
+  refreshDevice,
   type LocalTask,
 } from "./model";
 import type { WorkspaceController } from "./useWorkspace";
@@ -56,7 +56,7 @@ export function KeymapPanel({
     document: ConfigurationDocument;
     generation: number;
   } | null>(null);
-  const [syncing, setSyncing] = useState(false);
+  const { commit } = controller;
   const requestId = useRef(0);
   const live = useRef(runtime);
   live.current = runtime;
@@ -76,11 +76,6 @@ export function KeymapPanel({
     { length: 4 },
     (_, index) => deviceDraft?.keys[keyId(mode, index)],
   ).filter((key) => key?.dirty && key.action).length;
-  const validDocument =
-    document?.generation === runtime.generation &&
-    document.epoch === epoch &&
-    !loading &&
-    !readingDevice;
   const supportsWrite =
     runtime.inspection?.methods.includes("keymap.apply") ?? false;
 
@@ -98,12 +93,17 @@ export function KeymapPanel({
         if (
           id !== requestId.current ||
           generation !== live.current.generation ||
-          live.current.status !== "connected"
+          live.current.status !== "connected" ||
+          currentEpoch !==
+            (live.current.configurationEpochs[device.deviceId] ?? "0")
         )
           return;
         if (result.deviceId !== device.deviceId)
           throw new Error("返回的配置与所选设备不一致。");
         setDocument({ data: result, generation, epoch: currentEpoch });
+        commit((current) =>
+          refreshDevice(current, result, new Date().toISOString()),
+        );
         setLoading(false);
         return;
       } catch (cause) {
@@ -119,7 +119,7 @@ export function KeymapPanel({
         );
       }
     }
-  }, [device.deviceId]);
+  }, [device.deviceId, commit]);
 
   useEffect(() => {
     if (runtime.status === "connected" && (ready || readingDevice) && !running)
@@ -215,9 +215,8 @@ export function KeymapPanel({
     <section className={`keymap-panel ${selection ? "embedded-panel" : ""}`}>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">KEY CONFIGURATION</div>
           <h1>键位编辑</h1>
-          <p>{device.name} · 修改当前模式中的指定键位。</p>
+          <p>{device.name}，修改当前模式中的指定键位。</p>
         </div>
         <button
           className="primary-button"
@@ -233,7 +232,7 @@ export function KeymapPanel({
           }
           onClick={prepare}
         >
-          {preparing ? "正在核对…" : `写入修改${dirty ? ` · ${dirty}` : ""}`}
+          {preparing ? "正在核对…" : `写入修改${dirty ? `，${dirty}` : ""}`}
         </button>
       </div>
       <ConfigurationReadControl
@@ -244,6 +243,7 @@ export function KeymapPanel({
         }
         disabled={!ready || loading || running || unsettled || preparing}
         onRefresh={read}
+        readbackMessage=""
       />
       <div className="readback-banner">
         <div>
@@ -254,9 +254,6 @@ export function KeymapPanel({
                 ? `已知 ${known} / 16 个键位`
                 : "尚未读取键位"}
           </strong>
-          <p>
-            读取结果经你确认后同步到编辑区；未写入草稿会保留一个可恢复版本。
-          </p>
         </div>
         <div className="readback-actions">
           <button
@@ -265,13 +262,6 @@ export function KeymapPanel({
             onClick={() => void read()}
           >
             刷新已知键位
-          </button>
-          <button
-            className="secondary-button"
-            disabled={!ready || !validDocument || running || unsettled}
-            onClick={() => setSyncing(true)}
-          >
-            同步到编辑区
           </button>
         </div>
       </div>
@@ -351,9 +341,7 @@ export function KeymapPanel({
             </>
           ) : null}
           {selected === 0 ? (
-            <p className="field-hint">
-              Voice 键的语音行为取决于固件路由。AhaType 尚未接入。
-            </p>
+            <p className="field-hint">Voice 录音在“语音输入”中设置。</p>
           ) : null}
           {deviceDraft?.history.length ? (
             <button
@@ -367,7 +355,7 @@ export function KeymapPanel({
           ) : null}
           {deviceDraft?.synchronizedAt ? (
             <p className="field-hint">
-              上次同步到编辑区：
+              上次更新设备键位：
               {new Date(deviceDraft.synchronizedAt).toLocaleString("zh-CN")}
             </p>
           ) : null}
@@ -379,7 +367,7 @@ export function KeymapPanel({
               {selectedDraft?.dirty
                 ? "未写入"
                 : selectedDraft?.action
-                  ? "已同步"
+                  ? "设备当前值"
                   : "未知"}
             </span>
           </div>
@@ -393,25 +381,6 @@ export function KeymapPanel({
           />
         </article>
       </div>
-      {syncing && document ? (
-        <ConfirmDialog
-          title="同步键位到编辑区？"
-          confirmLabel="保存草稿并同步"
-          onClose={() => setSyncing(false)}
-          onConfirm={() => {
-            if (ready && validDocument && !unsettled && !running)
-              edit((current) =>
-                syncDevice(current, document.data, new Date().toISOString()),
-              );
-            setSyncing(false);
-          }}
-        >
-          <p>
-            将 Runtime 当前已知的 {known} 个键位同步到编辑区。未知键位保持未知。
-          </p>
-          <p>当前未写入草稿会保存为可恢复版本；这一步不写入键盘。</p>
-        </ConfirmDialog>
-      ) : null}
       {prepared ? (
         <ConfirmDialog
           title={`写入模式 ${prepared.task.request.mode + 1} 的 ${prepared.task.request.keys.length} 个键位？`}
@@ -419,10 +388,7 @@ export function KeymapPanel({
           onClose={() => setPrepared(null)}
           onConfirm={() => void submit()}
         >
-          <p>
-            目标设备：{device.name}
-            。本次只写入下列键位动作，描述、灯效和亮度保持不变。
-          </p>
+          <p>目标设备：{device.name}</p>
           <ul className="patch-list">
             {prepared.task.request.keys.map((key) => (
               <li key={key.index}>
