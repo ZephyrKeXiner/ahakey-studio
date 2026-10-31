@@ -5,8 +5,10 @@ import platform
 import shutil
 import subprocess
 import sys
+from native_signing import signing_identity, sign_component
 
 root = Path(__file__).resolve().parents[1]
+identity = signing_identity(root) if sys.platform == 'darwin' else '-'
 profile = 'release' if '--release' in sys.argv or (os.environ.get('TAURI_ENV_PLATFORM') and os.environ.get('TAURI_ENV_DEBUG') != 'true') else 'debug'
 runtime = Path(os.environ.get('AHAKEY_RUNTIME_BINARY', root.parent / f'ahakey-runtime-rust/target/{profile}/ahakey-runtime-rust')).resolve()
 if not runtime.is_file():
@@ -48,7 +50,7 @@ if sys.platform == 'darwin':
         triple = os.environ.get('TAURI_ENV_TARGET_TRIPLE', '')
         architecture = ('x86_64' if triple.startswith('x86_64') else 'arm64' if triple.startswith('aarch64') else platform.machine())
         subprocess.run([sys.executable, str(builder), '--output', str(speech_bundle), '--architecture', architecture,
-                        '--identity', os.environ.get('APPLE_SIGNING_IDENTITY', '-')], check=True)
+                        '--identity', identity, *(['--no-timestamp'] if profile == 'debug' else [])], check=True)
     if not (speech_bundle / 'Contents/MacOS/ahakey-speech').is_file():
         raise SystemExit('Missing matching AhaKey Speech.app beside Runtime; build the speech helper first.')
 command = ['cargo', 'build', '--manifest-path', 'src-tauri/Cargo.toml', '--bin', 'ahakey-runtime-supervisor', '--locked']
@@ -79,4 +81,6 @@ for destination in [root / 'src-tauri/resources/bin', root / f'src-tauri/target/
         shutil.copy2(source, temporary)
         temporary.chmod(0o755)
         temporary.replace(target)
+        if sys.platform == 'darwin':
+            sign_component(target, identity, profile == 'release')
 print(f'Staged Runtime, native helpers, and supervisor ({profile}).')

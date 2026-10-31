@@ -36,3 +36,6 @@ playwright-report/
 
 # Staged native bundle components
 src-tauri/resources/bin/
+
+# Python build helpers
+__pycache__/

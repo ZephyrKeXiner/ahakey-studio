@@ -85,7 +85,7 @@ npm run tauri build -- --debug --bundles app
 
 `npm run test:service` 在临时目录中注册唯一的 Mock launchd job，验证控制端退出后存活、单实例、崩溃恢复、主动停止、重新打开、输入观察偏好持久化与启动参数、恢复预算。`npm run test:bundle` 在构建开发包后启动真实 Studio 窗口，使用独立 Mock Runtime 验证随包组件与退出后后台存活；测试结束清理会话任务。它们不会连接真实键盘。
 
-本地开发包位于 `src-tauri/target/debug/bundle/macos/AhaKey Studio.app`，尚未配置 Developer ID 签名与公证。
+本地开发包位于 `src-tauri/target/debug/bundle/macos/AhaKey Studio.app`。签名身份通过 `APPLE_SIGNING_IDENTITY` 或本机 `signing-identity.local` 配置，详见下文；公开分发仍需公证。
 
 原生通信层已接入新增的 `configuration.patch`，支持独立亮度和指定键描述，联调覆盖原任务恢复及其他键位、灯效、OLED 不变。“亮度与描述”编辑页通过该接口提交修改。此方法依赖相邻 Runtime 仓库本次增量；旧 Runtime 不支持时不可退回整组覆盖写入。契约见 [字段级接口](../ahakey-runtime-rust/docs/configuration-patch-api.md)。
 
@@ -132,3 +132,15 @@ Apache-2.0，见 [LICENSE](LICENSE)。
 - AhaType 云端整理、云账号、状态驱动硬件灯光、Hook 一键安装／卸载尚未接入。原生真人录音、输入输出、真实工具会话与实体拨杆仍需验收；UI 测试使用模拟数据。
 
 详细契约与验收清单见 [语音与 Hook](../ahakey-runtime-rust/docs/voice-and-hooks.md)。
+
+## macOS 本机签名与权限保持
+
+`npm run tauri` 与原生组件准备脚本共用签名身份：优先读取 `APPLE_SIGNING_IDENTITY`，其次读取仓库根目录的 `signing-identity.local`（单行证书名称，已被 Git 忽略）。两者都未配置时使用临时签名；临时签名的哈希随重建变化，可能导致输入监控等已有授权不再匹配。
+
+使用钥匙串内同一证书签名，并固定 Studio、Runtime、supervisor、input-monitor 和 Hook 的签名标识，避免用编译产物文件名或每次变化的哈希作为组件身份。Studio、Runtime 和 supervisor 作为语音进程的权限责任方也声明 `com.apple.security.device.audio-input`；只给 Speech 子进程声明会被 hardened runtime 拒绝。首次从临时签名切换到证书签名，需要在系统设置重新授权输入监控，并通过语音页面请求麦克风、语音识别权限。自动粘贴还需要辅助功能权限。
+
+本地 `npm run tauri build -- --debug --bundles app` 在组装后签名并执行严格验证，不请求 Apple 时间戳服务；仅用于本机验证。发布构建保留时间戳流程，分发前另行公证。`npm run test:signing` 验证证书选择、组件标识和签名失败处理。
+
+重建前先通过 Studio 停止后台并退出应用；重建后重新打开。覆盖运行中的 bundle 不会自动替换已启动的 Runtime 进程。权限恢复后检查输入状态为 listening、语音权限为 granted，再按住 Voice 说话并松开，确认录音、结束和转写完成事件。
+
+2026-10-30 本机验收：补齐权限责任进程的麦克风 entitlement 后，保持同一证书重签并重启，输入监控与语音识别授权保留；用户允许麦克风后 Voice 绑定自动恢复。真机 F18 按下进入 recording，松开进入 finalizing，随后 completed、转写长度 4、无错误。自动粘贴未在此轮验收。

@@ -7,14 +7,15 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri",
+    "tauri": "python3 scripts/tauri.py",
     "check": "tsc --noEmit",
     "test": "vitest run src",
     "test:ui": "playwright test",
     "test:runtime": "python3 scripts/smoke-runtime.py",
     "prepare:native": "python3 scripts/prepare-native.py",
     "test:service": "python3 scripts/smoke-service.py",
-    "test:bundle": "python3 scripts/smoke-bundle.py"
+    "test:bundle": "python3 scripts/smoke-bundle.py",
+    "test:signing": "python3 -m unittest discover -s scripts -p test_native_signing.py"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
