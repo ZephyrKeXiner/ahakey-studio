@@ -15,6 +15,7 @@ export function ConfirmDialog({
 }) {
   return (
     <Dialog
+      initialFocus="action"
       title={title}
       onClose={onClose}
       actions={

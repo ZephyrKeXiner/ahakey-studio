@@ -111,6 +111,7 @@ export function ImageComposer({
   }
   return (
     <Dialog
+      initialFocus="action"
       title="调整屏幕画面"
       onClose={onClose}
       actions={

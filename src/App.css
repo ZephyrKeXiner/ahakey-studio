@@ -1195,6 +1195,10 @@ input[type="text"] {
   font-size: 20px;
   margin: 0 0 24px;
 }
+/* The static title receives initial focus; interactive controls retain their rings. */
+.confirm-dialog > h2:focus {
+  outline: none;
+}
 .dialog-body {
   overscroll-behavior: contain;
   font-size: 12px;

@@ -53,6 +53,7 @@ export function OperationDialog({
             : "核对上传结果";
   return (
     <Dialog
+      initialFocus="action"
       title={title}
       onClose={onClose}
       actions={
